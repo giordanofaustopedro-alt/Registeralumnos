@@ -8,21 +8,23 @@ import { registrarSancion } from '@/app/actions/expediente'
 
 export default function NuevaSancionPage() {
   const router = useRouter()
-  const [estudiantes, setEstudiantes] = useState<Array<{
-    id: string
-    apellido: string | null
-    nombre: string | null
-    dni: string | null
-    curso: string | null
-    division: string | null
-  }>>([])
+  const [estudiantes, setEstudiantes] = useState<
+    Array<{
+      id: string
+      apellido: string | null
+      nombre: string | null
+      dni: string | null
+      curso: string | null
+      division: string | null
+    }>
+  >([])
   const [cargandoLista, setCargandoLista] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [cargando, setCargando] = useState(false)
   const [exito, setExito] = useState(false)
 
   useEffect(() => {
-    getEstudiantes().then(r => {
+    getEstudiantes().then((r) => {
       setEstudiantes(r.data || [])
       setCargandoLista(false)
     })
@@ -64,51 +66,92 @@ export default function NuevaSancionPage() {
     }
   }
 
-  const tipos = ['Amonestación', 'Apercibimiento', 'Suspensión', 'Llamado a padres', 'Observación']
-  const categorias = ['Llegada tarde', 'Disciplina', 'Conducta', 'Falta de asistencia', 'Uso indebido de tecnología', 'Incumplimiento de tareas', 'Otro']
+  const tipos = [
+    'Amonestación',
+    'Apercibimiento',
+    'Suspensión',
+    'Llamado a padres',
+    'Observación',
+  ]
+  const categorias = [
+    'Llegada tarde',
+    'Disciplina',
+    'Conducta',
+    'Falta de asistencia',
+    'Uso indebido de tecnología',
+    'Incumplimiento de tareas',
+    'Otro',
+  ]
+
+  const inputCls =
+    'w-full px-4 py-3 border border-cs-border rounded-xl focus:outline-none focus:ring-2 focus:ring-cs-danger/30 focus:border-cs-danger/50 bg-cs-surface text-cs-text placeholder-cs-muted'
+  const labelCls = 'block text-sm font-bold text-cs-text mb-2'
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="max-w-4xl mx-auto space-y-6 pb-10">
+      <div className="flex justify-between items-center flex-wrap gap-4">
         <div>
-          <Link href="/sanciones" className="text-sm text-blue-600 hover:underline font-medium">
+          <Link
+            href="/sanciones"
+            className="text-sm text-cs-muted hover:text-cs-text font-bold inline-flex items-center gap-1"
+          >
             ← Volver al registro
           </Link>
-          <h1 className="text-3xl font-bold text-slate-900 mt-2">Cargar Nueva Sanción</h1>
-          <p className="text-slate-500 mt-1">
-            Registre una amonestación, apercibimiento o nota de convivencia.
-          </p>
+          <div className="mt-3 flex items-center gap-3 flex-wrap">
+            <div className="w-14 h-14 rounded-2xl bg-cs-danger-soft flex items-center justify-center text-3xl shadow">
+              ⚠️
+            </div>
+            <div>
+              <h1 className="text-3xl font-extrabold text-cs-text tracking-tight">
+                Cargar Nueva Sanción
+              </h1>
+              <p className="text-cs-muted mt-1">
+                Registre una amonestación, apercibimiento o nota de convivencia.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm">
-          {error}
+        <div className="p-4 bg-cs-danger-soft/70 border border-cs-danger/30 text-cs-danger rounded-2xl text-sm font-bold shadow-sm">
+          ⚠️ {error}
         </div>
       )}
       {exito && (
-        <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl text-sm">
+        <div className="p-4 bg-cs-success-soft border border-cs-success/30 text-cs-green rounded-2xl text-sm font-bold shadow-sm">
           ✓ Sanción registrada correctamente. Redirigiendo...
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-5">
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white rounded-3xl border border-cs-border p-7 shadow-lg space-y-5"
+      >
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">
-            Estudiante *
-          </label>
+          <label className={labelCls}>Estudiante *</label>
           {cargandoLista ? (
-            <div className="w-full px-4 py-2.5 border border-slate-300 rounded-xl bg-slate-50 text-slate-400">
-              Cargando estudiantes...
+            <div className="w-full px-4 py-3 border border-cs-border rounded-xl bg-cs-surface-alt text-cs-muted font-medium">
+              <span className="inline-flex items-center gap-2">
+                <span className="w-4 h-4 rounded-full border-2 border-cs-muted/40 border-t-cs-muted animate-spin" />
+                Cargando estudiantes...
+              </span>
+            </div>
+          ) : estudiantes.length === 0 ? (
+            <div className="p-4 border border-dashed border-cs-border rounded-xl bg-cs-surface-alt text-cs-muted text-sm font-medium text-center">
+              📭 No hay estudiantes cargados. Regístralos primero desde{' '}
+              <Link
+                href="/estudiantes/nuevo"
+                className="text-cs-green font-bold underline"
+              >
+                aquí
+              </Link>
+              .
             </div>
           ) : (
-            <select
-              name="estudianteId"
-              required
-              className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-            >
+            <select name="estudianteId" required className={inputCls}>
               <option value="">Seleccione un estudiante...</option>
-              {estudiantes.map(e => (
+              {estudiantes.map((e) => (
                 <option key={e.id} value={e.id}>
                   {e.apellido}, {e.nombre} — DNI: {e.dni} — {e.curso} &quot;{e.division}&quot;
                 </option>
@@ -119,70 +162,69 @@ export default function NuevaSancionPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Tipo de Sanción *
-            </label>
-            <select
-              name="tipo"
-              required
-              className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-            >
+            <label className={labelCls}>Tipo de Sanción *</label>
+            <select name="tipo" required className={inputCls}>
               <option value="">Seleccione...</option>
-              {tipos.map(t => <option key={t} value={t}>{t}</option>)}
+              {tipos.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Categoría *
-            </label>
-            <select
-              name="categoria"
-              required
-              className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-            >
+            <label className={labelCls}>Categoría *</label>
+            <select name="categoria" required className={inputCls}>
               <option value="">Seleccione...</option>
-              {categorias.map(c => <option key={c} value={c}>{c}</option>)}
+              {categorias.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
             </select>
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">
-            Motivo *
-          </label>
+          <label className={labelCls}>Motivo *</label>
           <input
             name="motivo"
             required
             placeholder="Descripción breve del hecho"
-            className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={inputCls}
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">
-            Descripción Detallada
-          </label>
+          <label className={labelCls}>Descripción Detallada</label>
           <textarea
             name="descripcion"
             rows={4}
             placeholder="Contexto, diálogos, medidas tomadas, comunicado a padres, etc."
-            className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+            className={`${inputCls} resize-none`}
           />
         </div>
 
-        <div className="pt-2 flex justify-end gap-3">
+        <div className="pt-4 flex justify-end gap-3 flex-wrap border-t border-cs-border/60 mt-2">
           <Link
             href="/sanciones"
-            className="px-6 py-2.5 border border-slate-300 rounded-xl font-medium text-slate-700 hover:bg-slate-50 transition"
+            className="px-6 py-3 border border-cs-border rounded-xl font-bold text-cs-text hover:bg-cs-surface-alt transition bg-cs-surface"
           >
             Cancelar
           </Link>
           <button
             type="submit"
-            disabled={cargando}
-            className="px-6 py-2.5 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-medium rounded-xl transition shadow-sm hover:shadow flex items-center gap-2"
+            disabled={cargando || estudiantes.length === 0}
+            className="px-8 py-3 bg-cs-danger hover:bg-cs-danger/90 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl transition shadow-lg hover:shadow-xl flex items-center gap-2"
           >
-            {cargando ? 'Guardando...' : '✓ Registrar Sanción'}
+            {cargando ? (
+              <>
+                <span className="w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />
+                Guardando...
+              </>
+            ) : (
+              <>✓ Registrar Sanción</>
+            )}
           </button>
         </div>
       </form>

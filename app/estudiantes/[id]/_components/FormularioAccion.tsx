@@ -15,7 +15,9 @@ type Campo = {
 type Props = {
   titulo: string
   campos: Campo[]
-  onSubmit: (data: Record<string, string>) => Promise<{ success: boolean; error?: string }>
+  onSubmit: (
+    data: Record<string, string>,
+  ) => Promise<{ success: boolean; error?: string }>
   exitoMsg: string
   submitText: string
   color?: 'blue' | 'red' | 'green'
@@ -27,7 +29,7 @@ export default function FormularioAccion({
   onSubmit,
   exitoMsg,
   submitText,
-  color = 'blue',
+  color = 'green',
 }: Props) {
   const router = useRouter()
   const [abierto, setAbierto] = useState(false)
@@ -44,7 +46,7 @@ export default function FormularioAccion({
 
     const formData = new FormData(e.currentTarget)
     const data: Record<string, string> = {}
-    campos.forEach(c => {
+    campos.forEach((c) => {
       data[c.name] = String(formData.get(c.name) || '')
     })
 
@@ -70,26 +72,30 @@ export default function FormularioAccion({
     }
   }
 
-  const colorClasses = {
-    blue: {
-      btn: 'bg-blue-600 hover:bg-blue-700',
-      toggle: 'bg-blue-600 hover:bg-blue-700 text-white',
+  const paleta = {
+    green: {
+      toggle: 'bg-cs-green hover:bg-cs-green-light text-white',
+      submit: 'bg-cs-green hover:bg-cs-green-light',
     },
     red: {
-      btn: 'bg-red-600 hover:bg-red-700',
-      toggle: 'bg-red-600 hover:bg-red-700 text-white',
+      toggle: 'bg-cs-danger hover:bg-cs-danger/90 text-white',
+      submit: 'bg-cs-danger hover:bg-cs-danger/90',
     },
-    green: {
-      btn: 'bg-emerald-600 hover:bg-emerald-700',
-      toggle: 'bg-emerald-600 hover:bg-emerald-700 text-white',
+    blue: {
+      toggle: 'bg-gradient-to-br from-cs-bg to-cs-bg-soft hover:opacity-90 text-white',
+      submit: 'bg-gradient-to-br from-cs-bg to-cs-bg-soft hover:opacity-90',
     },
   }[color]
+
+  const inputCls =
+    'w-full px-4 py-2.5 border border-cs-border rounded-xl focus:outline-none focus:ring-2 focus:ring-cs-green/30 focus:border-cs-green/50 bg-cs-surface text-cs-text placeholder-cs-muted'
+  const labelCls = 'block text-sm font-bold text-cs-text mb-1.5'
 
   if (!abierto) {
     return (
       <button
         onClick={() => setAbierto(true)}
-        className={`${colorClasses.toggle} px-4 py-2 rounded-xl text-sm font-medium transition shadow-sm`}
+        className={`${paleta.toggle} px-4 py-2.5 rounded-xl text-sm font-bold transition shadow-md hover:shadow-lg`}
       >
         {titulo}
       </button>
@@ -97,42 +103,41 @@ export default function FormularioAccion({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg">
-        <div className="flex justify-between items-center p-6 border-b border-slate-100">
-          <h3 className="font-bold text-slate-800">{titulo}</h3>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-cs-green/30 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg border border-cs-border overflow-hidden scale-in duration-200">
+        <div className="flex justify-between items-center px-7 py-5 border-b border-cs-border bg-gradient-to-r from-cs-surface to-white">
+          <h3 className="font-extrabold text-xl text-cs-text">{titulo}</h3>
           <button
             onClick={() => setAbierto(false)}
-            className="text-slate-400 hover:text-slate-600 text-xl leading-none"
+            className="w-9 h-9 rounded-xl flex items-center justify-center text-cs-muted hover:text-cs-text hover:bg-cs-surface-alt transition text-2xl leading-none"
+            aria-label="Cerrar"
           >
             ×
           </button>
         </div>
 
-        <form ref={formRef} onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form ref={formRef} onSubmit={handleSubmit} className="p-7 space-y-5">
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm">
-              {error}
+            <div className="p-4 bg-cs-danger-soft/60 border border-cs-danger/30 text-cs-danger rounded-2xl text-sm font-bold shadow-sm">
+              ⚠️ {error}
             </div>
           )}
           {exito && (
-            <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl text-sm">
+            <div className="p-4 bg-cs-success-soft border border-cs-success/30 text-cs-green rounded-2xl text-sm font-bold shadow-sm">
               ✓ {exito}
             </div>
           )}
 
-          {campos.map(c => (
+          {campos.map((c) => (
             <div key={c.name}>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                {c.label}
-              </label>
+              <label className={labelCls}>{c.label}</label>
               {c.tipo === 'textarea' ? (
                 <textarea
                   name={c.name}
                   required={c.required}
                   placeholder={c.placeholder}
                   rows={3}
-                  className="w-full px-4 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                  className={`${inputCls} resize-none`}
                 />
               ) : (
                 <input
@@ -140,7 +145,7 @@ export default function FormularioAccion({
                   type={c.type || 'text'}
                   required={c.required}
                   placeholder={c.placeholder}
-                  className="w-full px-4 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={inputCls}
                 />
               )}
             </div>
@@ -150,16 +155,23 @@ export default function FormularioAccion({
             <button
               type="button"
               onClick={() => setAbierto(false)}
-              className="px-5 py-2 border border-slate-300 rounded-xl font-medium text-slate-700 hover:bg-slate-50 transition text-sm"
+              className="px-5 py-2.5 border border-cs-border rounded-xl font-bold text-cs-text hover:bg-cs-surface-alt transition text-sm bg-cs-surface"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={cargando}
-              className={`${colorClasses.btn} disabled:opacity-50 text-white px-5 py-2 rounded-xl font-medium transition shadow-sm text-sm`}
+              className={`${paleta.submit} disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-2.5 rounded-xl font-bold transition shadow-md hover:shadow-lg text-sm inline-flex items-center gap-2`}
             >
-              {cargando ? 'Guardando...' : submitText}
+              {cargando ? (
+                <>
+                  <span className="w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />
+                  Guardando...
+                </>
+              ) : (
+                submitText
+              )}
             </button>
           </div>
         </form>

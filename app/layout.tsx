@@ -16,11 +16,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
-      <body className={`${inter.className} bg-slate-100 min-h-screen flex text-slate-800`}>
+      <body
+        className={`${inter.className} bg-cs-surface min-h-screen flex text-cs-text antialiased`}
+      >
         <Sidebar />
-        <main className="flex-1 p-8 overflow-y-auto">
-          {children}
-        </main>
+        <main className="flex-1 p-8 overflow-y-auto">{children}</main>
       </body>
     </html>
   )

@@ -12,81 +12,127 @@ export default async function EstudiantesPage({
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
-      {/* Encabezado */}
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center flex-wrap gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Listado de Estudiantes</h1>
-          <p className="text-slate-500 mt-1">
-            Administra los expedientes y datos de los alumnos.
+          <p className="text-sm text-cs-muted font-medium tracking-wide uppercase">
+            Administración
+          </p>
+          <h1 className="text-3xl font-extrabold text-cs-text mt-1">
+            Listado de Estudiantes
+          </h1>
+          <p className="text-cs-muted mt-1">
+            Gestiona los expedientes y datos de los alumnos.
           </p>
         </div>
         <Link
           href="/estudiantes/nuevo"
-          className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2.5 rounded-xl transition shadow-sm hover:shadow"
+          className="bg-cs-green hover:bg-cs-green-light text-white font-semibold px-6 py-3 rounded-xl transition shadow-lg hover:shadow-xl flex items-center gap-2"
         >
-          + Nuevo Estudiante
+          <span className="text-lg leading-none">+</span> Nuevo Estudiante
         </Link>
       </div>
 
-      {/* Buscador */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-        <form method="GET" className="flex gap-3">
-          <input
-            type="text"
-            name="q"
-            defaultValue={q || ''}
-            placeholder="Buscar por DNI, nombre o apellido..."
-            className="flex-1 px-4 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800"
-          />
+      <div className="bg-white p-5 rounded-2xl border border-cs-border shadow-sm">
+        <form method="GET" className="flex gap-3 flex-wrap">
+          <div className="relative flex-1 min-w-[260px]">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-cs-muted">
+              🔍
+            </span>
+            <input
+              type="text"
+              name="q"
+              defaultValue={q || ''}
+              placeholder="Buscar por DNI, nombre o apellido..."
+              className="w-full pl-11 pr-4 py-3 border border-cs-border rounded-xl focus:outline-none focus:ring-2 focus:ring-cs-green/40 focus:border-cs-green/60 text-cs-text bg-cs-surface"
+            />
+          </div>
           <button
             type="submit"
-            className="bg-slate-800 hover:bg-slate-900 text-white px-5 py-2 rounded-xl transition font-medium"
+            className="bg-cs-green hover:bg-cs-green-light text-white px-6 py-3 rounded-xl transition font-semibold shadow-sm"
           >
             Buscar
           </button>
+          {q && (
+            <Link
+              href="/estudiantes"
+              className="px-6 py-3 rounded-xl border border-cs-border text-cs-muted hover:text-cs-text font-semibold transition bg-cs-surface"
+            >
+              Limpiar
+            </Link>
+          )}
         </form>
       </div>
 
-      {/* Tabla de Alumnos */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-2xl border border-cs-border shadow-sm overflow-hidden">
         {estudiantes.length === 0 ? (
-          <div className="text-center py-12 text-slate-500">
-            No se encontraron estudiantes registrados.
+          <div className="text-center py-16 px-6">
+            <div className="text-6xl mb-4 opacity-30">📚</div>
+            <p className="text-xl font-bold text-cs-text mb-1">Sin resultados</p>
+            <p className="text-cs-muted">
+              {q ? 'Prueba con otros términos de búsqueda.' : 'No se encontraron estudiantes registrados.'}
+            </p>
           </div>
         ) : (
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 text-sm">
-                <th className="p-4 font-semibold">Apellido y Nombre</th>
-                <th className="p-4 font-semibold">DNI</th>
-                <th className="p-4 font-semibold">Curso</th>
-                <th className="p-4 font-semibold">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {estudiantes.map((estudiante) => (
-                <tr key={estudiante.id} className="hover:bg-slate-50 transition">
-                  <td className="p-4 font-medium text-slate-800">
-                    {estudiante.apellido}, {estudiante.nombre}
-                  </td>
-                  <td className="p-4 text-slate-600">{estudiante.dni}</td>
-                  <td className="p-4">
-                    <span className="px-3 py-1 bg-slate-100 text-slate-700 text-xs font-semibold rounded-lg">
-                      {estudiante.curso} &quot;{estudiante.division}&quot;
-                    </span>
-                  </td>
-                  <td className="p-4">
-                    <Link
-                      href={`/estudiantes/${estudiante.id}`}
-                      className="text-blue-600 hover:underline font-medium text-sm"
+          <>
+            <div className="hidden md:flex items-center justify-between px-6 py-4 bg-cs-surface-alt border-b border-cs-border">
+              <p className="text-sm text-cs-muted">
+                <span className="font-bold text-cs-text">{estudiantes.length}</span> alumno
+                {estudiantes.length === 1 ? '' : 's'} encontrado
+                {estudiantes.length === 1 ? '' : 's'}
+              </p>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse min-w-[720px]">
+                <thead>
+                  <tr className="bg-cs-surface-alt border-b border-cs-border text-cs-muted text-sm">
+                    <th className="p-5 font-bold text-cs-text">Apellido y Nombre</th>
+                    <th className="p-5 font-bold text-cs-text">DNI</th>
+                    <th className="p-5 font-bold text-cs-text">Curso</th>
+                    <th className="p-5 font-bold text-cs-text text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-cs-border/60">
+                  {estudiantes.map((estudiante) => (
+                    <tr
+                      key={estudiante.id}
+                      className="hover:bg-cs-surface-alt/50 transition"
                     >
-                      Ver expediente
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                      <td className="p-5">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cs-bg to-cs-bg-soft flex items-center justify-center text-white text-sm font-bold shadow">
+                            {estudiante.nombre?.[0] ?? 'A'}
+                            {estudiante.apellido?.[0] ?? ''}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-cs-text">
+                              {estudiante.apellido}, {estudiante.nombre}
+                            </p>
+                            {estudiante.email && (
+                              <p className="text-xs text-cs-muted">{estudiante.email}</p>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="p-5 text-cs-text font-medium">{estudiante.dni}</td>
+                      <td className="p-5">
+                        <span className="px-3 py-1.5 bg-cs-surface-alt text-cs-text text-xs font-bold rounded-lg border border-cs-border/70">
+                          {estudiante.curso} &quot;{estudiante.division}&quot;
+                        </span>
+                      </td>
+                      <td className="p-5 text-right">
+                        <Link
+                          href={`/estudiantes/${estudiante.id}`}
+                          className="inline-flex items-center gap-1 text-cs-green hover:text-cs-green-light font-semibold text-sm"
+                        >
+                          Ver expediente →
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
     </div>
