@@ -1,0 +1,135 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Estudiante {
+  id        String @id @default(uuid())
+  nombre    String
+  apellido  String
+  dni       String @unique
+  email     String?
+  direccion String?
+  curso     String?
+  division  String?
+  fotoUrl   String?
+
+  creadoEn      DateTime @default(now())
+  actualizadoEn DateTime @updatedAt
+
+  responsables   Responsable[]
+  infoMedica     InfoMedica?
+  documentos     Documento[]
+  amonestaciones Amonestacion[]
+  sanciones      Sancion[]
+  historial      Historial[]
+}
+
+model Responsable {
+  id           String @id @default(uuid())
+  estudianteId String
+
+  estudiante Estudiante @relation(fields: [estudianteId], references: [id], onDelete: Cascade)
+
+  tipo       TipoResponsable?
+  parentesco String?
+  nombre     String
+  apellido   String?
+  dni        String?
+  telefono   String?
+  email      String?
+  direccion  String?
+}
+
+enum TipoResponsable {
+  PADRE
+  MADRE
+  TUTOR
+}
+
+model InfoMedica {
+  id           String @id @default(uuid())
+  estudianteId String @unique
+
+  estudiante Estudiante @relation(fields: [estudianteId], references: [id], onDelete: Cascade)
+
+  grupoSanguineo     String?
+  alergias           String?
+  medicacion         String?
+  enfermedades       String?
+  problemasCardiacos String?
+  observaciones      String?
+}
+
+model Documento {
+  id           String @id @default(uuid())
+  estudianteId String
+
+  estudiante Estudiante @relation(fields: [estudianteId], references: [id], onDelete: Cascade)
+
+  tipo       TipoDocumento @default(OTRO)
+  nombre     String?
+  titulo     String
+  archivoUrl String
+  creadoEn   DateTime @default(now())
+}
+
+enum TipoDocumento {
+  FICHA_MEDICA
+  AUTORIZACION
+  OTRO
+}
+
+model Amonestacion {
+  id           String @id @default(uuid())
+  estudianteId String
+
+  estudiante Estudiante @relation(fields: [estudianteId], references: [id], onDelete: Cascade)
+
+  motivo      String
+  descripcion String?
+  fecha       DateTime @default(now())
+}
+
+model Sancion {
+  id           String @id @default(uuid())
+  estudianteId String
+
+  estudiante Estudiante @relation(fields: [estudianteId], references: [id], onDelete: Cascade)
+
+  tipo        String
+  categoria   String?
+  motivo      String
+  descripcion String?
+  fecha       DateTime @default(now())
+
+  firmadaPorEstudiante Boolean @default(false)
+  fechaFirma            DateTime?
+}
+
+model Historial {
+  id           String @id @default(uuid())
+  estudianteId String
+
+  estudiante Estudiante @relation(fields: [estudianteId], references: [id], onDelete: Cascade)
+
+  tipo        String
+  categoria   String?
+  motivo      String
+  descripcion String?
+  fecha       DateTime @default(now())
+}
+
+model Recurso {
+  id              String   @id @default(uuid())
+  titulo          String
+  descripcion     String?
+  nivelEducativo  String
+  categoria       String
+  archivoUrl      String
+  esDescargable   Boolean  @default(true)
+  creadoEn        DateTime @default(now())
+}

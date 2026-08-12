@@ -39,3 +39,15 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+/app/generated/prisma
+
+# Archivos temporales extracción de documentos
+/tp4_temp.md
+/Trabajo_Practico_4_Diseno_Detallado*.html
+
+# IDE / Editores locales
+.agents/
+.claude/
+.windsurf/
+skills-lock.json
