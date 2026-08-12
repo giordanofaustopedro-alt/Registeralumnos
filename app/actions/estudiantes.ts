@@ -149,7 +149,15 @@ export async function crearEstudiante(input: EstudianteInput) {
 
 export async function actualizarEstudiante(id: string, input: Partial<EstudianteInput>) {
   try {
-    const data: any = {
+    const data: {
+      dni?: string
+      nombre?: string
+      apellido?: string
+      curso?: string
+      division?: string
+      email?: string | null
+      direccion?: string | null
+    } = {
       dni: input.dni,
       nombre: input.nombre,
       apellido: input.apellido,

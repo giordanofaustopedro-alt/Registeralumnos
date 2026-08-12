@@ -8,7 +8,14 @@ import { registrarSancion } from '@/app/actions/expediente'
 
 export default function NuevaSancionPage() {
   const router = useRouter()
-  const [estudiantes, setEstudiantes] = useState<any[]>([])
+  const [estudiantes, setEstudiantes] = useState<Array<{
+    id: string
+    apellido: string | null
+    nombre: string | null
+    dni: string | null
+    curso: string | null
+    division: string | null
+  }>>([])
   const [cargandoLista, setCargandoLista] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [cargando, setCargando] = useState(false)
@@ -50,7 +57,7 @@ export default function NuevaSancionPage() {
         router.push('/sanciones')
         router.refresh()
       }, 1200)
-    } catch (err) {
+    } catch {
       setError('Error de conexión. Intente nuevamente.')
     } finally {
       setCargando(false)
@@ -103,7 +110,7 @@ export default function NuevaSancionPage() {
               <option value="">Seleccione un estudiante...</option>
               {estudiantes.map(e => (
                 <option key={e.id} value={e.id}>
-                  {e.apellido}, {e.nombre} — DNI: {e.dni} — {e.curso} "{e.division}"
+                  {e.apellido}, {e.nombre} — DNI: {e.dni} — {e.curso} &quot;{e.division}&quot;
                 </option>
               ))}
             </select>

@@ -82,7 +82,7 @@ export default async function HomePage() {
                 </div>
                 <div className="flex items-center gap-4">
                   <span className="px-3 py-1 bg-slate-100 text-slate-600 text-xs font-medium rounded-lg">
-                    {estudiante.curso} "{estudiante.division}"
+                    {estudiante.curso} &quot;{estudiante.division}&quot;
                   </span>
                   <Link
                     href={`/estudiantes/${estudiante.id}`}

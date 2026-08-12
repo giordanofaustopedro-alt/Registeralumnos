@@ -65,7 +65,7 @@ export default async function SancionesPage() {
                   </td>
                   <td className="p-4">
                     <span className="px-3 py-1 bg-slate-100 text-slate-700 text-xs font-semibold rounded-lg">
-                      {sancion.estudiante?.curso} "{sancion.estudiante?.division}"
+                      {sancion.estudiante?.curso} &quot;{sancion.estudiante?.division}&quot;
                     </span>
                   </td>
                   <td className="p-4">

@@ -63,7 +63,7 @@ export default function FormularioAccion({
         setAbierto(false)
         setExito(null)
       }, 1500)
-    } catch (err) {
+    } catch {
       setError('Error de conexión. Intente nuevamente.')
     } finally {
       setCargando(false)

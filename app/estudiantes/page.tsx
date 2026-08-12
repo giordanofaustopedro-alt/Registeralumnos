@@ -72,7 +72,7 @@ export default async function EstudiantesPage({
                   <td className="p-4 text-slate-600">{estudiante.dni}</td>
                   <td className="p-4">
                     <span className="px-3 py-1 bg-slate-100 text-slate-700 text-xs font-semibold rounded-lg">
-                      {estudiante.curso} "{estudiante.division}"
+                      {estudiante.curso} &quot;{estudiante.division}&quot;
                     </span>
                   </td>
                   <td className="p-4">

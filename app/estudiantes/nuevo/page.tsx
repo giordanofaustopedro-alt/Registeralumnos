@@ -46,7 +46,7 @@ export default function NuevoEstudiantePage() {
 
       router.push(`/estudiantes/${resultado.data.id}`)
       router.refresh()
-    } catch (err) {
+    } catch {
       setError('Error de conexión. Intente nuevamente.')
     } finally {
       setCargando(false)

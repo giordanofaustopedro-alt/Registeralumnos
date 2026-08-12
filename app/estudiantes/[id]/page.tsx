@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getEstudiantePorId, eliminarEstudiante } from '@/app/actions/estudiantes'
-import { agregarResponsable, registrarSancion, agregarDocumento, eliminarSancion } from '@/app/actions/expediente'
+import { agregarResponsable, registrarSancion, agregarDocumento } from '@/app/actions/expediente'
 import FormularioAccion from './_components/FormularioAccion'
 
 export default async function ExpedienteEstudiantePage({
@@ -30,7 +30,7 @@ export default async function ExpedienteEstudiantePage({
           </h1>
           <div className="flex items-center gap-3 mt-2 flex-wrap">
             <span className="px-3 py-1 bg-blue-100 text-blue-700 text-sm font-semibold rounded-lg">
-              {e.curso} "{e.division}"
+              {e.curso} &quot;{e.division}&quot;
             </span>
             <span className="text-sm text-slate-500">DNI: {e.dni}</span>
             {e.email && <span className="text-sm text-slate-500">✉️ {e.email}</span>}
@@ -159,7 +159,7 @@ export default async function ExpedienteEstudiantePage({
               </p>
             ) : (
               <div className="relative pl-6 space-y-5 before:absolute before:left-2.5 before:top-1 before:bottom-1 before:w-0.5 before:bg-slate-200">
-                {e.historial.map((h, idx) => (
+                {e.historial.map((h) => (
                   <div key={h.id} className="relative">
                     <div className={`absolute -left-[22px] top-1 w-4 h-4 rounded-full border-4 border-white ${
                       h.tipo?.toLowerCase().includes('positiv') || h.tipo?.toLowerCase().includes('observ') && !h.tipo?.toLowerCase().includes('negativ')
