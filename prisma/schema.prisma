@@ -6,16 +6,62 @@ datasource db {
   provider = "postgresql"
 }
 
+// ==========================================
+// ENUMS (Especialidades y Tipos)
+// ==========================================
+
+enum Especialidad {
+  HUMANIDADES // Corresponde a división A
+  INFORMATICA // Corresponde a división B
+}
+
+enum TipoResponsable {
+  PADRE
+  MADRE
+  TUTOR
+}
+
+enum TipoDocumento {
+  FICHA_MEDICA
+  AUTORIZACION
+  OTRO
+}
+
+// ==========================================
+// MODELO DE CURSOS Y ESTRUCTURA ESCOLAR
+// ==========================================
+
+model Curso {
+  id           String       @id @default(uuid())
+  anio         Int          // 4, 5, 6
+  division     String       // "A" o "B"
+  especialidad Especialidad // HUMANIDADES o INFORMATICA
+
+  estudiantes Estudiante[]
+
+  creadoEn DateTime @default(now())
+
+  @@unique([anio, division]) // Evita duplicar "4° A", "5° B", etc.
+}
+
+// ==========================================
+// MODELO DE ESTUDIANTES Y SUS RELACIONES
+// ==========================================
+
 model Estudiante {
-  id        String @id @default(uuid())
+  id        String   @id @default(uuid())
   nombre    String
   apellido  String
-  dni       String @unique
+  dni       String   @unique
   email     String?
   direccion String?
-  curso     String?
-  division  String?
+  curso     String?  // Guarda el año en texto ("4°", "5°", "6°") o relación
+  division  String?  // Guarda "A" o "B"
   fotoUrl   String?
+
+  // Relación opcional con el modelo Curso
+  cursoId String?
+  cursoRef Curso?  @relation(fields: [cursoId], references: [id], onDelete: SetNull)
 
   creadoEn      DateTime @default(now())
   actualizadoEn DateTime @updatedAt
@@ -26,6 +72,9 @@ model Estudiante {
   amonestaciones Amonestacion[]
   sanciones      Sancion[]
   historial      Historial[]
+
+  @@index([dni])
+  @@index([apellido, nombre])
 }
 
 model Responsable {
@@ -42,12 +91,8 @@ model Responsable {
   telefono   String?
   email      String?
   direccion  String?
-}
 
-enum TipoResponsable {
-  PADRE
-  MADRE
-  TUTOR
+  @@index([estudianteId])
 }
 
 model InfoMedica {
@@ -57,7 +102,7 @@ model InfoMedica {
   estudiante Estudiante @relation(fields: [estudianteId], references: [id], onDelete: Cascade)
 
   grupoSanguineo     String?
-  alergias           String?
+  alergias            String?
   medicacion         String?
   enfermedades       String?
   problemasCardiacos String?
@@ -74,13 +119,9 @@ model Documento {
   nombre     String?
   titulo     String
   archivoUrl String
-  creadoEn   DateTime @default(now())
-}
+  creadoEn   DateTime      @default(now())
 
-enum TipoDocumento {
-  FICHA_MEDICA
-  AUTORIZACION
-  OTRO
+  @@index([estudianteId])
 }
 
 model Amonestacion {
@@ -92,6 +133,8 @@ model Amonestacion {
   motivo      String
   descripcion String?
   fecha       DateTime @default(now())
+
+  @@index([estudianteId])
 }
 
 model Sancion {
@@ -106,8 +149,10 @@ model Sancion {
   descripcion String?
   fecha       DateTime @default(now())
 
-  firmadaPorEstudiante Boolean @default(false)
-  fechaFirma            DateTime?
+  firmadaPorEstudiante Boolean   @default(false)
+  fechaFirma           DateTime?
+
+  @@index([estudianteId])
 }
 
 model Historial {
@@ -121,15 +166,17 @@ model Historial {
   motivo      String
   descripcion String?
   fecha       DateTime @default(now())
+
+  @@index([estudianteId])
 }
 
 model Recurso {
-  id              String   @id @default(uuid())
-  titulo          String
-  descripcion     String?
-  nivelEducativo  String
-  categoria       String
-  archivoUrl      String
-  esDescargable   Boolean  @default(true)
-  creadoEn        DateTime @default(now())
+  id             String   @id @default(uuid())
+  titulo         String
+  descripcion    String?
+  nivelEducativo String
+  categoria      String
+  archivoUrl     String
+  esDescargable  Boolean  @default(true)
+  creadoEn       DateTime @default(now())
 }

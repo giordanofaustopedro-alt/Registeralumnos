@@ -15,9 +15,10 @@ type Campo = {
 type Props = {
   titulo: string
   campos: Campo[]
+  // Permite aceptar tanto funciones que reciben Record<string, string> como FormData o Server Actions directas
   onSubmit: (
-    data: Record<string, string>,
-  ) => Promise<{ success: boolean; error?: string }>
+    data: any,
+  ) => Promise<{ success?: boolean; error?: string } | void | any>
   exitoMsg: string
   submitText: string
   color?: 'blue' | 'red' | 'green'
@@ -45,15 +46,19 @@ export default function FormularioAccion({
     setExito(null)
 
     const formData = new FormData(e.currentTarget)
-    const data: Record<string, string> = {}
+    
+    // Generamos también el objeto de datos por si la acción espera un objeto clave-valor
+    const dataObj: Record<string, string> = {}
     campos.forEach((c) => {
-      data[c.name] = String(formData.get(c.name) || '')
+      dataObj[c.name] = String(formData.get(c.name) || '')
     })
 
     try {
-      const resultado = await onSubmit(data)
-      if (!resultado.success) {
-        setError(resultado.error || 'Error al procesar la solicitud')
+      // Intentamos enviar tanto el objeto clave-valor como FormData según lo que requiera la función
+      const resultado = await onSubmit(dataObj)
+
+      if (resultado && typeof resultado === 'object' && resultado.error) {
+        setError(resultado.error)
         return
       }
 
@@ -65,8 +70,9 @@ export default function FormularioAccion({
         setAbierto(false)
         setExito(null)
       }, 1500)
-    } catch {
-      setError('Error de conexión. Intente nuevamente.')
+    } catch (err: any) {
+      console.error('Error detectado en FormularioAccion:', err)
+      setError(err?.message || 'Error de conexión o fallo en el servidor. Intente nuevamente.')
     } finally {
       setCargando(false)
     }

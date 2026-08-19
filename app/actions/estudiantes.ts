@@ -30,18 +30,28 @@ export async function getEstudiantes(busqueda?: string) {
             OR: [
               { nombre: { contains: busqueda, mode: 'insensitive' } },
               { apellido: { contains: busqueda, mode: 'insensitive' } },
-              { dni: { contains: busqueda } },
+              { dni: { contains: busqueda, mode: 'insensitive' } },
             ],
           }
         : undefined,
       orderBy: { apellido: 'asc' },
-      include: {
+      select: {
+        id: true,
+        dni: true,
+        nombre: true,
+        apellido: true,
+        curso: true,
+        division: true,
+        email: true,
+        direccion: true,
         infoMedica: true,
         _count: {
           select: {
             responsables: true,
             historial: true,
             documentos: true,
+            sanciones: true,       // Contador optimizado para métricas
+            amonestaciones: true,  // Contador optimizado para métricas
           },
         },
       },
@@ -163,40 +173,50 @@ export async function actualizarEstudiante(id: string, input: Partial<Estudiante
       apellido: input.apellido,
       curso: input.curso,
       division: input.division,
-      email: input.email || null,
-      direccion: input.direccion || null,
+      email: input.email !== undefined ? (input.email || null) : undefined,
+      direccion: input.direccion !== undefined ? (input.direccion || null) : undefined,
     }
 
-    const tieneInfoMedica = input.grupoSanguineo || input.alergias || input.medicacion ||
-                            input.enfermedades || input.problemasCardiacos || input.observacionesMedicas
+    const tieneInfoMedica =
+      input.grupoSanguineo !== undefined ||
+      input.alergias !== undefined ||
+      input.medicacion !== undefined ||
+      input.enfermedades !== undefined ||
+      input.problemasCardiacos !== undefined ||
+      input.observacionesMedicas !== undefined
 
-    const estudianteActualizado = await prisma.estudiante.update({
-      where: { id },
-      data,
-    })
-
-    if (tieneInfoMedica) {
-      await prisma.infoMedica.upsert({
-        where: { estudianteId: id },
-        update: {
-          grupoSanguineo: input.grupoSanguineo,
-          alergias: input.alergias,
-          medicacion: input.medicacion,
-          enfermedades: input.enfermedades,
-          problemasCardiacos: input.problemasCardiacos,
-          observaciones: input.observacionesMedicas,
-        },
-        create: {
-          estudianteId: id,
-          grupoSanguineo: input.grupoSanguineo || 'Sin especificar',
-          alergias: input.alergias || 'Ninguna',
-          medicacion: input.medicacion || 'Ninguna',
-          enfermedades: input.enfermedades || 'Ninguna',
-          problemasCardiacos: input.problemasCardiacos || 'Sin antecedentes',
-          observaciones: input.observacionesMedicas || '',
-        },
+    // Operación atómica en una sola transacción para mejorar performance
+    const estudianteActualizado = await prisma.$transaction(async (tx) => {
+      const estudiante = await tx.estudiante.update({
+        where: { id },
+        data,
       })
-    }
+
+      if (tieneInfoMedica) {
+        await tx.infoMedica.upsert({
+          where: { estudianteId: id },
+          update: {
+            grupoSanguineo: input.grupoSanguineo,
+            alergias: input.alergias,
+            medicacion: input.medicacion,
+            enfermedades: input.enfermedades,
+            problemasCardiacos: input.problemasCardiacos,
+            observaciones: input.observacionesMedicas,
+          },
+          create: {
+            estudianteId: id,
+            grupoSanguineo: input.grupoSanguineo || 'Sin especificar',
+            alergias: input.alergias || 'Ninguna',
+            medicacion: input.medicacion || 'Ninguna',
+            enfermedades: input.enfermedades || 'Ninguna',
+            problemasCardiacos: input.problemasCardiacos || 'Sin antecedentes',
+            observaciones: input.observacionesMedicas || '',
+          },
+        })
+      }
+
+      return estudiante
+    })
 
     revalidatePath('/')
     revalidatePath('/estudiantes')

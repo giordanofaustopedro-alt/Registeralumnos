@@ -2,24 +2,49 @@ import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 
 export default async function SancionesPage() {
-  const sanciones = await prisma.sancion
-    .findMany({
-      include: {
+  // Ejecutamos las consultas en paralelo directo en PostgreSQL para máxima velocidad
+  const [sanciones, totalSanciones, totalSuspensiones, totalAmonestaciones] = await Promise.all([
+    // 1. Obtener solo las últimas 50 sanciones
+    prisma.sancion.findMany({
+      take: 50,
+      select: {
+        id: true,
+        fecha: true,
+        tipo: true,
+        motivo: true,
+        categoria: true,
         estudiante: {
           select: {
+            id: true,
             nombre: true,
             apellido: true,
             curso: true,
             division: true,
-            id: true,
           },
         },
       },
       orderBy: {
         fecha: 'desc',
       },
-    })
-    .catch(() => [])
+    }).catch(() => []),
+
+    // 2. Conteo total de registros
+    prisma.sancion.count().catch(() => 0),
+
+    // 3. Conteo rápido de suspensiones
+    prisma.sancion.count({
+      where: {
+        tipo: { contains: 'suspens', mode: 'insensitive' },
+      },
+    }).catch(() => 0),
+
+    // 4. Conteo rápido de amonestaciones
+    prisma.sancion.count({
+      where: {
+        tipo: { contains: 'amonest', mode: 'insensitive' },
+      },
+    }).catch(() => 0),
+  ])
 
   function coloresTipo(tipo: string | null) {
     const t = (tipo || '').toLowerCase()
@@ -46,13 +71,6 @@ export default async function SancionesPage() {
       dot: 'bg-cs-muted',
     }
   }
-
-  const totalSuspensiones = sanciones.filter((s) =>
-    (s.tipo || '').toLowerCase().includes('suspens'),
-  ).length
-  const totalAmonestaciones = sanciones.filter((s) =>
-    (s.tipo || '').toLowerCase().includes('amonest'),
-  ).length
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-10">
@@ -83,7 +101,7 @@ export default async function SancionesPage() {
             <p className="text-sm font-bold text-cs-muted uppercase tracking-wide">
               Total registradas
             </p>
-            <p className="text-4xl font-black text-cs-text mt-2">{sanciones.length}</p>
+            <p className="text-4xl font-black text-cs-text mt-2">{totalSanciones}</p>
             <p className="text-xs text-cs-muted mt-2 font-medium">Registros históricos</p>
           </div>
         </div>
@@ -124,9 +142,8 @@ export default async function SancionesPage() {
           <>
             <div className="hidden md:flex items-center justify-between px-7 py-4 bg-cs-surface-alt border-b border-cs-border">
               <p className="text-sm text-cs-muted">
-                <span className="font-black text-cs-text">{sanciones.length}</span> registro
-                {sanciones.length === 1 ? '' : 's'} total
-                {sanciones.length === 1 ? '' : 'es'}
+                Mostrando <span className="font-black text-cs-text">{sanciones.length}</span> de{' '}
+                <span className="font-black text-cs-text">{totalSanciones}</span> registros
               </p>
             </div>
             <div className="overflow-x-auto">

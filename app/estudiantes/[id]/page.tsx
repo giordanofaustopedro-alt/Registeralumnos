@@ -18,6 +18,11 @@ export default async function ExpedienteEstudiantePage({
 
   const e = respuesta.data
 
+  // Vinculamos el ID del estudiante a las acciones de servidor
+  const agregarResponsableAction = agregarResponsable.bind(null, id)
+  const registrarSancionAction = registrarSancion.bind(null, id)
+  const agregarDocumentoAction = agregarDocumento.bind(null, id)
+
   function colorTipoHistorial(tipo: string | null) {
     const t = (tipo || '').toLowerCase()
     if (t.includes('positiv') || (t.includes('observ') && !t.includes('negativ'))) {
@@ -185,7 +190,7 @@ export default async function ExpedienteEstudiantePage({
                   { name: 'telefono', label: 'Teléfono *', required: true },
                   { name: 'email', label: 'Email', type: 'email' },
                 ]}
-                onSubmit={async (data) => agregarResponsable(id, data)}
+                onSubmit={agregarResponsableAction}
                 exitoMsg="Responsable agregado correctamente"
                 submitText="Agregar Responsable"
               />
@@ -260,7 +265,7 @@ export default async function ExpedienteEstudiantePage({
                   { name: 'motivo', label: 'Motivo *', required: true, tipo: 'textarea' },
                   { name: 'descripcion', label: 'Descripción detallada', tipo: 'textarea' },
                 ]}
-                onSubmit={async (data) => registrarSancion(id, data)}
+                onSubmit={registrarSancionAction}
                 exitoMsg="Evento registrado correctamente"
                 submitText="Registrar"
               />
@@ -348,7 +353,7 @@ export default async function ExpedienteEstudiantePage({
                     placeholder: 'https://...',
                   },
                 ]}
-                onSubmit={async (data) => agregarDocumento(id, data)}
+                onSubmit={agregarDocumentoAction}
                 exitoMsg="Documento agregado correctamente"
                 submitText="Agregar Documento"
               />

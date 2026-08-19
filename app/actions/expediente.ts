@@ -19,13 +19,16 @@ const SancionSchema = z.object({
   descripcion: z.string().optional(),
 })
 
-export async function agregarResponsable(estudianteId: string, input: {
-  nombre: string
-  dni: string
-  parentesco: string
-  telefono: string
-  email?: string
-}) {
+export async function agregarResponsable(
+  estudianteId: string,
+  input: {
+    nombre: string
+    dni: string
+    parentesco: string
+    telefono: string
+    email?: string
+  }
+) {
   const validacion = ResponsableSchema.safeParse(input)
   if (!validacion.success) {
     return { success: false, error: validacion.error.issues[0].message }
@@ -48,12 +51,15 @@ export async function agregarResponsable(estudianteId: string, input: {
   }
 }
 
-export async function registrarSancion(estudianteId: string, input: {
-  tipo: string
-  categoria: string
-  motivo: string
-  descripcion?: string
-}) {
+export async function registrarSancion(
+  estudianteId: string,
+  input: {
+    tipo: string
+    categoria: string
+    motivo: string
+    descripcion?: string
+  }
+) {
   const validacion = SancionSchema.safeParse(input)
   if (!validacion.success) {
     return { success: false, error: validacion.error.issues[0].message }
@@ -102,11 +108,14 @@ export async function eliminarSancion(sancionId: string) {
   }
 }
 
-export async function agregarDocumento(estudianteId: string, data: {
-  titulo: string
-  archivoUrl: string
-  tipo?: 'FICHA_MEDICA' | 'AUTORIZACION' | 'OTRO'
-}) {
+export async function agregarDocumento(
+  estudianteId: string,
+  data: {
+    titulo: string
+    archivoUrl: string
+    tipo?: 'FICHA_MEDICA' | 'AUTORIZACION' | 'OTRO'
+  }
+) {
   try {
     const documento = await prisma.documento.create({
       data: {

@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 @theme {
+  /* Definición de la paleta dentro del tema de Tailwind */
   --color-cs-bg: #a67c1b;
   --color-cs-bg-soft: #b8922f;
   --color-cs-surface: #FFFDF8;
@@ -20,19 +21,8 @@
 }
 
 @layer base {
-  :root {
-    --color-cs-bg: #a67c1b;
-    --color-cs-surface: #FFFDF8;
-    --color-cs-green: #173D2D;
-    --color-cs-green-light: #285845;
-    --color-cs-text: #1C211E;
-    --color-cs-muted: #747A75;
-    --color-cs-border: #DDD8CE;
-    --color-cs-warning: #C78C42;
-    --color-cs-danger: #A6483E;
-  }
-
   html, body {
+    /* Usar las clases/variables compiladas por el tema de Tailwind */
     background-color: var(--color-cs-surface);
     color: var(--color-cs-text);
   }
