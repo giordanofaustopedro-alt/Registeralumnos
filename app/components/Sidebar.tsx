@@ -13,14 +13,19 @@ function NavLink({
   label: string
 }) {
   const pathname = usePathname()
-  const activo = pathname === href || pathname.startsWith(`${href}/`)
+  
+  // Lógica para detectar ruta activa (evita que '/' quede activo en todas las pantallas)
+  const activo =
+    href === '/'
+      ? pathname === '/'
+      : pathname === href || pathname.startsWith(`${href}/`)
 
   return (
     <Link
       href={href}
       className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition ${
         activo
-          ? 'bg-cs-bg-soft/30 text-white shadow-inner'
+          ? 'bg-cs-bg-soft/30 text-white shadow-inner font-bold'
           : 'text-white/80 hover:bg-white/10 hover:text-white'
       }`}
     >
@@ -46,6 +51,7 @@ export default function Sidebar() {
         <nav className="flex flex-col gap-2">
           <NavLink href="/" icon="🏠" label="Inicio" />
           <NavLink href="/estudiantes" icon="👨‍🎓" label="Estudiantes" />
+          <NavLink href="/cursos" icon="🏫" label="Cursos" />
           <NavLink href="/sanciones" icon="📋" label="Sanciones" />
         </nav>
       </div>

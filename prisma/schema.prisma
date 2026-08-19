@@ -3,7 +3,11 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+ datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
 }
 
 // ==========================================
@@ -11,8 +15,9 @@ datasource db {
 // ==========================================
 
 enum Especialidad {
-  HUMANIDADES // Corresponde a división A
-  INFORMATICA // Corresponde a división B
+  CICLO_BASICO // Para 1°, 2° y 3° año
+  HUMANIDADES  // Corresponde a división A (4°, 5°, 6°)
+  INFORMATICA  // Corresponde a división B (4°, 5°, 6°)
 }
 
 enum TipoResponsable {
@@ -32,16 +37,16 @@ enum TipoDocumento {
 // ==========================================
 
 model Curso {
-  id           String       @id @default(uuid())
-  anio         Int          // 4, 5, 6
-  division     String       // "A" o "B"
-  especialidad Especialidad // HUMANIDADES o INFORMATICA
+  id           String        @id @default(uuid())
+  anio         Int           // 1, 2, 3, 4, 5, 6
+  division     String        // "A" o "B"
+  especialidad Especialidad? @default(CICLO_BASICO)
 
   estudiantes Estudiante[]
 
   creadoEn DateTime @default(now())
 
-  @@unique([anio, division]) // Evita duplicar "4° A", "5° B", etc.
+  @@unique([anio, division]) // Evita duplicar "1° A", "5° B", etc.
 }
 
 // ==========================================
@@ -55,12 +60,12 @@ model Estudiante {
   dni       String   @unique
   email     String?
   direccion String?
-  curso     String?  // Guarda el año en texto ("4°", "5°", "6°") o relación
+  curso     String?  // Guarda el año en texto ("1°", "2°", "3°", "4°", "5°", "6°")
   division  String?  // Guarda "A" o "B"
   fotoUrl   String?
 
   // Relación opcional con el modelo Curso
-  cursoId String?
+  cursoId  String?
   cursoRef Curso?  @relation(fields: [cursoId], references: [id], onDelete: SetNull)
 
   creadoEn      DateTime @default(now())
