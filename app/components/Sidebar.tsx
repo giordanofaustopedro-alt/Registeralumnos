@@ -52,7 +52,7 @@ export default function Sidebar() {
           <NavLink href="/" icon="🏠" label="Inicio" />
           <NavLink href="/estudiantes" icon="👨‍🎓" label="Estudiantes" />
           <NavLink href="/cursos" icon="🏫" label="Cursos" />
-          <NavLink href="/sanciones" icon="📋" label="Sanciones" />
+          <NavLink href="/sanciones/nueva" icon="📋" label="Sanciones" />
         </nav>
       </div>
 

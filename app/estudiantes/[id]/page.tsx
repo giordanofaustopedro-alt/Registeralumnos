@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation'
 import { getEstudiantePorId, eliminarEstudiante } from '@/app/actions/estudiantes'
 import { agregarResponsable, registrarSancion, agregarDocumento } from '@/app/actions/expediente'
 import FormularioAccion from './_components/FormularioAccion'
+import SelectorDocumento from './_components/SelectorDocumento'
+import ImprimirLegajoButton from './_components/ImprimirLegajoButton'
 
 export default async function ExpedienteEstudiantePage({
   params,
@@ -47,7 +49,7 @@ export default async function ExpedienteEstudiantePage({
   }
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6 pb-10">
+    <div className="printable-legajo max-w-7xl mx-auto space-y-6 pb-10">
       <div className="flex justify-between items-start flex-wrap gap-4">
         <div>
           <Link
@@ -82,7 +84,8 @@ export default async function ExpedienteEstudiantePage({
             </div>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="print-hide flex gap-2">
+          <ImprimirLegajoButton />
           <form
             action={async () => {
               'use server'
@@ -337,26 +340,7 @@ export default async function ExpedienteEstudiantePage({
                   <p className="text-sm text-cs-muted">Archivos adjuntos</p>
                 </div>
               </div>
-              <FormularioAccion
-                titulo="+ Subir"
-                campos={[
-                  {
-                    name: 'titulo',
-                    label: 'Título *',
-                    required: true,
-                    placeholder: 'Ej: Ficha Médica 2026',
-                  },
-                  {
-                    name: 'archivoUrl',
-                    label: 'URL del archivo *',
-                    required: true,
-                    placeholder: 'https://...',
-                  },
-                ]}
-                onSubmit={agregarDocumentoAction}
-                exitoMsg="Documento agregado correctamente"
-                submitText="Agregar Documento"
-              />
+              <SelectorDocumento onSubmit={agregarDocumentoAction} />
             </div>
             {e.documentos.length === 0 ? (
               <div className="py-8 border-2 border-dashed border-cs-border rounded-2xl text-center">

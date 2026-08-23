@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { Fragment, useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { getEstudiantes } from '@/app/actions/estudiantes'
+import { getEstudiantePorId, getEstudiantes } from '@/app/actions/estudiantes'
 import { registrarSancion } from '@/app/actions/expediente'
 
 export default function NuevaSancionPage() {
@@ -22,6 +22,20 @@ export default function NuevaSancionPage() {
   const [error, setError] = useState<string | null>(null)
   const [cargando, setCargando] = useState(false)
   const [exito, setExito] = useState(false)
+  const [estudianteSeleccionado, setEstudianteSeleccionado] = useState<{
+    id: string
+    nombre: string
+    apellido: string
+    curso: string | null
+    division: string | null
+    direccion: string | null
+    sanciones: Array<{
+      fecha: Date
+      tipo: string
+      categoria: string | null
+      motivo: string
+    }>
+  } | null>(null)
 
   useEffect(() => {
     getEstudiantes().then((r) => {
@@ -29,6 +43,31 @@ export default function NuevaSancionPage() {
       setCargandoLista(false)
     })
   }, [])
+
+  async function cargarEstudiante(id: string) {
+    if (!id) {
+      setEstudianteSeleccionado(null)
+      return
+    }
+
+    const resultado = await getEstudiantePorId(id)
+    if (resultado.success && resultado.data) {
+      setEstudianteSeleccionado({
+        id: resultado.data.id,
+        nombre: resultado.data.nombre,
+        apellido: resultado.data.apellido,
+        curso: resultado.data.curso,
+        division: resultado.data.division,
+        direccion: resultado.data.direccion,
+        sanciones: resultado.data.sanciones.map((sancion) => ({
+          fecha: sancion.fecha,
+          tipo: sancion.tipo,
+          categoria: sancion.categoria,
+          motivo: sancion.motivo,
+        })),
+      })
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -53,12 +92,12 @@ export default function NuevaSancionPage() {
       }
 
       setExito(true)
-      ;(e.currentTarget as HTMLFormElement).reset()
 
       setTimeout(() => {
+        window.print()
         router.push('/sanciones')
         router.refresh()
-      }, 1200)
+      }, 250)
     } catch {
       setError('Error de conexión. Intente nuevamente.')
     } finally {
@@ -68,13 +107,11 @@ export default function NuevaSancionPage() {
 
   const tipos = [
     'Amonestación',
-    'Apercibimiento',
     'Suspensión',
     'Llamado a padres',
     'Observación',
   ]
   const categorias = [
-    'Llegada tarde',
     'Disciplina',
     'Conducta',
     'Falta de asistencia',
@@ -88,48 +125,68 @@ export default function NuevaSancionPage() {
   const labelCls = 'block text-sm font-bold text-cs-text mb-2'
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 pb-10">
-      <div className="flex justify-between items-center flex-wrap gap-4">
+    <div className="max-w-5xl mx-auto space-y-6 pb-10 printable-sancion">
+      <div className="screen-only flex justify-between items-center flex-wrap gap-4">
         <div>
           <Link
             href="/sanciones"
-            className="text-sm text-cs-muted hover:text-cs-text font-bold inline-flex items-center gap-1"
+            className="screen-only text-sm text-cs-muted hover:text-cs-text font-bold inline-flex items-center gap-1"
           >
             ← Volver al registro
           </Link>
-          <div className="mt-3 flex items-center gap-3 flex-wrap">
-            <div className="w-14 h-14 rounded-2xl bg-cs-danger-soft flex items-center justify-center text-3xl shadow">
-              ⚠️
-            </div>
-            <div>
-              <h1 className="text-3xl font-extrabold text-cs-text tracking-tight">
-                Cargar Nueva Sanción
-              </h1>
-              <p className="text-cs-muted mt-1">
-                Registre una amonestación, apercibimiento o nota de convivencia.
-              </p>
-            </div>
-          </div>
+          <h1 className="text-3xl font-extrabold text-cs-text tracking-tight mt-3">
+            Cargar Nueva Sanción
+          </h1>
         </div>
       </div>
 
       {error && (
-        <div className="p-4 bg-cs-danger-soft/70 border border-cs-danger/30 text-cs-danger rounded-2xl text-sm font-bold shadow-sm">
+        <div className="screen-only p-4 bg-cs-danger-soft/70 border border-cs-danger/30 text-cs-danger rounded-2xl text-sm font-bold shadow-sm">
           ⚠️ {error}
         </div>
       )}
       {exito && (
-        <div className="p-4 bg-cs-success-soft border border-cs-success/30 text-cs-green rounded-2xl text-sm font-bold shadow-sm">
+        <div className="screen-only p-4 bg-cs-success-soft border border-cs-success/30 text-cs-green rounded-2xl text-sm font-bold shadow-sm">
           ✓ Sanción registrada correctamente. Redirigiendo...
         </div>
       )}
 
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white rounded-3xl border border-cs-border p-7 shadow-lg space-y-5"
-      >
-        <div>
-          <label className={labelCls}>Estudiante *</label>
+      <form onSubmit={handleSubmit} className="print-sheet bg-white border border-gray-300 shadow-lg">
+        <header className="institution-header border-b-2 border-gray-800 pb-4">
+          <div className="institution-mark">CÓRDOBA</div>
+          <div className="text-center leading-tight">
+            <p className="text-lg font-black uppercase">Gobierno de la Provincia de Córdoba</p>
+            <p className="font-semibold">Ministerio de Educación</p>
+            <p>Secretaría de Educación</p>
+            <p>Dirección General de Educación Pública de Gestión Privada</p>
+            <p>Inspección de Institutos Privados</p>
+            <p className="font-black uppercase mt-1">Instituto &quot;Nuestra Señora de la Merced&quot;</p>
+          </div>
+          <div className="institution-mark">EDU</div>
+        </header>
+
+        <div className="relative py-5 text-center">
+          <h2 className="text-2xl font-bold italic">Solicitud de Aplicación de Medidas Disciplinarias</h2>
+          <label className="absolute right-0 top-6 text-sm font-bold">
+            Parte N°:
+            <input name="parteNumero" className="paper-line w-24 ml-2" />
+          </label>
+        </div>
+
+        <div className="grid grid-cols-[1fr_auto_1fr] gap-4 text-sm mb-3">
+          <label className="font-bold">Curso:
+            <input value={estudianteSeleccionado ? `${estudianteSeleccionado.curso || ''} ${estudianteSeleccionado.division || ''}` : ''} readOnly className="paper-line ml-2 w-28" />
+          </label>
+          <label className="font-bold">Fecha:
+            <input name="fecha" type="date" defaultValue={new Date().toISOString().slice(0, 10)} className="paper-line ml-2 w-32" />
+          </label>
+          <label className="font-bold text-right">Alumno:
+            <input value={estudianteSeleccionado ? `${estudianteSeleccionado.apellido}, ${estudianteSeleccionado.nombre}` : ''} readOnly className="paper-line ml-2 w-48" />
+          </label>
+        </div>
+
+        <div className="screen-only mb-4">
+          <label className={labelCls}>Seleccionar alumno *</label>
           {cargandoLista ? (
             <div className="w-full px-4 py-3 border border-cs-border rounded-xl bg-cs-surface-alt text-cs-muted font-medium">
               <span className="inline-flex items-center gap-2">
@@ -149,7 +206,7 @@ export default function NuevaSancionPage() {
               .
             </div>
           ) : (
-            <select name="estudianteId" required className={inputCls}>
+            <select name="estudianteId" required className={inputCls} onChange={(event) => cargarEstudiante(event.target.value)}>
               <option value="">Seleccione un estudiante...</option>
               {estudiantes.map((e) => (
                 <option key={e.id} value={e.id}>
@@ -160,71 +217,74 @@ export default function NuevaSancionPage() {
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div>
-            <label className={labelCls}>Tipo de Sanción *</label>
-            <select name="tipo" required className={inputCls}>
-              <option value="">Seleccione...</option>
-              {tipos.map((t) => (
-                <option key={t} value={t}>
-                  {t}
-                </option>
-              ))}
-            </select>
+        <p className="text-sm font-semibold mb-2">Señora DIRECTORA solicito que a este alumno se le aplique una medida disciplinaria por la siguiente falta:</p>
+        <div className="screen-only grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+          <select name="tipo" required className={inputCls}>
+            <option value="">Tipo de sanción *</option>
+            {tipos.map((tipo) => <option key={tipo} value={tipo}>{tipo}</option>)}
+          </select>
+          <select name="categoria" required className={inputCls}>
+            <option value="">Categoría *</option>
+            {categorias.map((categoria) => <option key={categoria} value={categoria}>{categoria}</option>)}
+          </select>
+        </div>
+
+        <input name="motivo" required placeholder="Escriba aquí la falta" className="paper-line w-full text-sm font-semibold" />
+        <label className="block text-sm font-bold mt-3">Descripción de lo ocurrido:</label>
+        <textarea name="descripcion" rows={4} className="paper-area w-full mt-1" />
+
+        <div className="signature-row mt-5">
+          <span className="signature-line">Aclaración de la firma</span>
+          <span className="signature-line">Profesor o Preceptor</span>
+        </div>
+
+        <section className="border-t-2 border-gray-800 mt-6 pt-3">
+          <h3 className="text-center font-black text-lg">Medidas Disciplinarias Anteriores</h3>
+          <div className="previous-measures mt-3">
+            <div className="font-bold">Fecha</div><div className="font-bold">Cant. Sanciones</div><div className="font-bold">Parte N°</div><div className="font-bold">Causa de la Sanción</div>
+            {estudianteSeleccionado?.sanciones.slice(0, 3).map((sancion) => (
+              <Fragment key={`${sancion.fecha.toString()}-${sancion.motivo}`}>
+                <div>{new Date(sancion.fecha).toLocaleDateString('es-AR')}</div><div>{sancion.tipo}</div><div>—</div><div>{sancion.motivo}</div>
+              </Fragment>
+            ))}
+            {!estudianteSeleccionado?.sanciones.length && <div className="col-span-4 py-5 text-gray-500 italic">Sin medidas disciplinarias anteriores</div>}
           </div>
-          <div>
-            <label className={labelCls}>Categoría *</label>
-            <select name="categoria" required className={inputCls}>
-              <option value="">Seleccione...</option>
-              {categorias.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
+          <div className="signature-row mt-6"><span /><span className="signature-line">Profesor o Preceptor</span></div>
+        </section>
+
+        <section className="border-t-2 border-gray-800 mt-6 pt-3">
+          <h3 className="text-center font-black text-lg">Resolución</h3>
+          <p className="text-sm font-semibold mt-4">Señora DIRECTORA estimo que corresponde se le aplique:</p>
+          <input name="resolucion" placeholder="Medida disciplinaria / resolución" className="paper-line w-full mt-3" />
+          <div className="grid grid-cols-2 gap-8 text-sm mt-5">
+            <label>Día y mes: <input className="paper-line w-32" /></label>
+            <span className="signature-line">Preceptor</span>
+            <label>Conforme y anotado: <input className="paper-line w-40" /></label>
+            <span className="signature-line">Responsable Directivo</span>
           </div>
-        </div>
+        </section>
 
-        <div>
-          <label className={labelCls}>Motivo *</label>
-          <input
-            name="motivo"
-            required
-            placeholder="Descripción breve del hecho"
-            className={inputCls}
-          />
-        </div>
+        <section className="border-t-2 border-gray-800 mt-6 pt-3">
+          <h3 className="text-center font-black text-lg">Solicitud de Aplicación de Medidas Disciplinarias</h3>
+          <div className="grid grid-cols-2 gap-3 text-sm mt-3">
+            <label>Curso: <input value={estudianteSeleccionado ? `${estudianteSeleccionado.curso || ''} ${estudianteSeleccionado.division || ''}` : ''} readOnly className="paper-line w-32" /></label>
+            <label>Fecha: <input className="paper-line w-32" /></label>
+            <label>Legajo N°: <input name="legajo" className="paper-line w-32" /></label>
+            <label>Dirección: <input value={estudianteSeleccionado?.direccion || ''} readOnly className="paper-line w-48" /></label>
+          </div>
+          <p className="text-sm mt-4">Señor/a <input value={estudianteSeleccionado ? `${estudianteSeleccionado.apellido}, ${estudianteSeleccionado.nombre}` : ''} readOnly className="paper-line w-64" /> comunico a Usted que al alumno se le han aplicado las medidas indicadas por la siguiente falta.</p>
+          <p className="text-sm mt-4">con estas amonestaciones suman en total <input className="paper-line w-16" />.</p>
+          <div className="signature-row mt-8"><span /><span className="signature-line">Responsable Directivo</span></div>
+          <p className="text-center italic font-semibold mt-6">Lugar y Fecha:</p>
+          <p className="italic text-sm mt-6">Me notifico de la Sanción Disciplinaria, según corresponde a lo establecido en el Acuerdo Escolar de Convivencia.</p>
+          <div className="signature-row mt-12"><span /><span className="signature-line">Firma del Responsable del Alumno</span></div>
+          <p className="italic font-bold text-sm mt-8">NOTA: El alumno no será admitido en el Establecimiento sin presentar este parte firmado por el padre o tutor.</p>
+        </section>
 
-        <div>
-          <label className={labelCls}>Descripción Detallada</label>
-          <textarea
-            name="descripcion"
-            rows={4}
-            placeholder="Contexto, diálogos, medidas tomadas, comunicado a padres, etc."
-            className={`${inputCls} resize-none`}
-          />
-        </div>
-
-        <div className="pt-4 flex justify-end gap-3 flex-wrap border-t border-cs-border/60 mt-2">
-          <Link
-            href="/sanciones"
-            className="px-6 py-3 border border-cs-border rounded-xl font-bold text-cs-text hover:bg-cs-surface-alt transition bg-cs-surface"
-          >
-            Cancelar
-          </Link>
-          <button
-            type="submit"
-            disabled={cargando || estudiantes.length === 0}
-            className="px-8 py-3 bg-cs-danger hover:bg-cs-danger/90 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl transition shadow-lg hover:shadow-xl flex items-center gap-2"
-          >
-            {cargando ? (
-              <>
-                <span className="w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />
-                Guardando...
-              </>
-            ) : (
-              <>✓ Registrar Sanción</>
-            )}
+        <div className="screen-only pt-4 flex justify-end gap-3">
+          <Link href="/sanciones" className="px-6 py-3 border border-cs-border rounded-xl font-bold">Cancelar</Link>
+          <button type="submit" disabled={cargando || estudiantes.length === 0} className="px-8 py-3 bg-cs-danger text-white font-bold rounded-xl disabled:opacity-50">
+            {cargando ? 'Guardando...' : 'Aplicar e imprimir'}
           </button>
         </div>
       </form>

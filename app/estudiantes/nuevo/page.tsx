@@ -10,8 +10,8 @@ export default function NuevoEstudiantePage() {
   const [error, setError] = useState<string | null>(null)
   const [cargando, setCargando] = useState(false)
 
-  const cursos = ['1°', '2°', '3°', '4°', '5°', '6°', '7°']
-  const divisiones = ['A', 'B', 'C', 'D', 'E']
+  const cursos = ['1°', '2°', '3°', '4°', '5°', '6°']
+  const divisiones = ['A', 'B']
   const gruposSanguineos = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', '0+', '0-', 'Sin especificar']
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -39,7 +39,7 @@ export default function NuevoEstudiantePage() {
         observacionesMedicas: String(data.observacionesMedicas || ''),
       })
 
-      if (!resultado.success) {
+      if (!resultado.success || !resultado.data) {
         setError(resultado.error || 'Error al crear el estudiante')
         return
       }

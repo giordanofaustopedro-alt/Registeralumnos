@@ -126,30 +126,45 @@ export async function crearEstudiante(input: EstudianteInput) {
       return { success: false, error: 'Ya existe un estudiante registrado con ese DNI.' }
     }
 
-    const nuevoEstudiante = await prisma.estudiante.create({
-      data: {
-        dni,
-        nombre,
-        apellido,
-        curso,
-        division,
-        email: email || null,
-        direccion: direccion || null,
-        infoMedica: {
-          create: {
-            grupoSanguineo: grupoSanguineo || 'Sin especificar',
-            alergias: alergias || 'Ninguna',
-            medicacion: medicacion || 'Ninguna',
-            enfermedades: enfermedades || 'Ninguna',
-            problemasCardiacos: problemasCardiacos || 'Sin antecedentes',
-            observaciones: observacionesMedicas || '',
+    const anio = Number.parseInt(curso, 10) 
+    const especialidad = anio >= 4
+      ? division === 'A' ? 'HUMANIDADES' : 'INFORMATICA'
+      : 'CICLO_BASICO'
+
+    const nuevoEstudiante = await prisma.$transaction(async (tx) => {
+      const cursoRef = await tx.curso.upsert({
+        where: { anio_division: { anio, division } },
+        update: {},
+        create: { anio, division, especialidad },
+      })
+
+      return tx.estudiante.create({
+        data: {
+          dni,
+          nombre,
+          apellido,
+          curso,
+          division,
+          cursoRef: { connect: { id: cursoRef.id } },
+          email: email || null,
+          direccion: direccion || null,
+          infoMedica: {
+            create: {
+              grupoSanguineo: grupoSanguineo || 'Sin especificar',
+              alergias: alergias || 'Ninguna',
+              medicacion: medicacion || 'Ninguna',
+              enfermedades: enfermedades || 'Ninguna',
+              problemasCardiacos: problemasCardiacos || 'Sin antecedentes',
+              observaciones: observacionesMedicas || '',
+            },
           },
         },
-      },
+      })
     })
 
     revalidatePath('/')
     revalidatePath('/estudiantes')
+    revalidatePath('/cursos')
     return { success: true, data: nuevoEstudiante }
   } catch (error) {
     console.error('Error al crear estudiante:', error)

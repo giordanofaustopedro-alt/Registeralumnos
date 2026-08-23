@@ -13,8 +13,12 @@ const ResponsableSchema = z.object({
 })
 
 const SancionSchema = z.object({
-  tipo: z.string().min(2, 'El tipo es obligatorio'),
-  categoria: z.string().min(2, 'La categoría es obligatoria'),
+  tipo: z.enum(['Amonestación', 'Suspensión', 'Llamado a padres', 'Observación'], {
+    message: 'El tipo de sanción no está permitido.',
+  }),
+  categoria: z.enum(['Disciplina', 'Conducta', 'Falta de asistencia', 'Uso indebido de tecnología', 'Incumplimiento de tareas', 'Otro'], {
+    message: 'La categoría no está permitida.',
+  }),
   motivo: z.string().min(5, 'El motivo es obligatorio'),
   descripcion: z.string().optional(),
 })

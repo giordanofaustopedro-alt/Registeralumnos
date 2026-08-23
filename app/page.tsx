@@ -54,7 +54,10 @@ export default async function HomePage() {
             </div>
             <h3 className="text-lg font-bold text-cs-text">Sanciones</h3>
             <p className="text-4xl font-black text-cs-warning mt-2">
-              {estudiantes.reduce((sum, e) => sum + (e.amonestaciones?.length ?? 0) + (e.sanciones?.length ?? 0), 0)}
+              {estudiantes.reduce(
+                (sum, e) => sum + e._count.amonestaciones + e._count.sanciones,
+                0
+              )}
             </p>
             <p className="text-sm text-cs-muted mt-2">Registros de convivencia</p>
           </div>
