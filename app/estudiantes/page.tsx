@@ -1,6 +1,8 @@
 
 import Link from 'next/link'
 import { getEstudiantes } from '@/app/actions/estudiantes'
+import ImportarDesdePendrive from '@/app/components/ImportarDesdePendrive'
+import SeleccionImpresion from '@/app/components/SeleccionImpresion'
 
 export default async function EstudiantesPage({
   searchParams,
@@ -62,6 +64,11 @@ export default async function EstudiantesPage({
             </Link>
           )}
         </form>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <ImportarDesdePendrive />
+        <SeleccionImpresion estudiantes={estudiantes.map(({ id, nombre, apellido, dni, curso }) => ({ id, nombre, apellido, dni, curso: curso || undefined }))} />
       </div>
 
       <div className="bg-white rounded-2xl border border-cs-border shadow-sm overflow-hidden">

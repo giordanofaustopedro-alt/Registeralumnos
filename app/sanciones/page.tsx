@@ -1,9 +1,10 @@
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
+import GestionProfesores from '@/app/components/GestionProfesores'
 
 export default async function SancionesPage() {
   // Ejecutamos las consultas en paralelo directo en PostgreSQL para máxima velocidad
-  const [sanciones, totalSanciones, totalSuspensiones, totalAmonestaciones] = await Promise.all([
+  const [sanciones, totalSanciones, totalSuspensiones, totalAmonestaciones, profesores] = await Promise.all([
     // 1. Obtener solo las últimas 50 sanciones
     prisma.sancion.findMany({
       take: 50,
@@ -44,6 +45,11 @@ export default async function SancionesPage() {
         tipo: { contains: 'amonest', mode: 'insensitive' },
       },
     }).catch(() => 0),
+
+    prisma.profesor.findMany({
+      where: { activo: true },
+      orderBy: [{ apellido: 'asc' }, { nombre: 'asc' }],
+    }).catch(() => []),
   ])
 
   function coloresTipo(tipo: string | null) {
@@ -128,6 +134,8 @@ export default async function SancionesPage() {
           </div>
         </div>
       </section>
+
+      <GestionProfesores profesores={profesores} />
 
       <div className="bg-white rounded-3xl border border-cs-border shadow-sm overflow-hidden">
         {sanciones.length === 0 ? (

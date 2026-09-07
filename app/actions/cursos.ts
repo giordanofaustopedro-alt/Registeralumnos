@@ -59,7 +59,35 @@ export async function sembrarCursos() {
   }
 }
 
-// 3. Eliminar un curso existente
+// 3. Actualizar un curso existente
+export async function actualizarCurso(formData: FormData) {
+  const id = String(formData.get('id') || '')
+  const anio = Number(formData.get('anio'))
+  const division = String(formData.get('division') || '').trim().toUpperCase()
+  const especialidad = String(formData.get('especialidad') || '')
+
+  if (!id || !Number.isInteger(anio) || anio < 1 || anio > 6 || !division || !['HUMANIDADES', 'INFORMATICA', 'CICLO_BASICO'].includes(especialidad)) {
+    return { success: false, error: 'Los datos del curso no son válidos.' }
+  }
+
+  try {
+    await prisma.curso.update({
+      where: { id },
+      data: {
+        anio,
+        division,
+        especialidad: especialidad as 'HUMANIDADES' | 'INFORMATICA' | 'CICLO_BASICO',
+      },
+    })
+    revalidatePath('/cursos')
+    return { success: true }
+  } catch (error) {
+    console.error('Error al actualizar curso:', error)
+    return { success: false, error: 'No se pudo actualizar el curso. Verificá que el año y la división no estén repetidos.' }
+  }
+}
+
+// 4. Eliminar un curso existente
 export async function eliminarCurso(cursoId: string) {
   try {
     await prisma.curso.delete({

@@ -49,7 +49,7 @@
   .print-hide,
   aside,
   button,
-  form {
+  form:not(.print-sheet) {
     display: none !important;
   }
 

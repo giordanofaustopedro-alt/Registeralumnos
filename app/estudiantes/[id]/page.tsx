@@ -19,6 +19,24 @@ export default async function ExpedienteEstudiantePage({
   }
 
   const e = respuesta.data
+  const historialCompleto = [
+    ...e.historial.map((registro) => ({
+      id: registro.id,
+      tipo: registro.tipo,
+      categoria: registro.categoria,
+      motivo: registro.motivo,
+      descripcion: registro.descripcion,
+      fecha: registro.fecha,
+    })),
+    ...e.amonestaciones.map((amonestacion) => ({
+      id: `amonestacion-${amonestacion.id}`,
+      tipo: 'Amonestación',
+      categoria: null,
+      motivo: amonestacion.motivo,
+      descripcion: amonestacion.descripcion,
+      fecha: amonestacion.fecha,
+    })),
+  ].sort((a, b) => b.fecha.getTime() - a.fecha.getTime())
 
   // Vinculamos el ID del estudiante a las acciones de servidor
   const agregarResponsableAction = agregarResponsable.bind(null, id)
@@ -273,7 +291,7 @@ export default async function ExpedienteEstudiantePage({
                 submitText="Registrar"
               />
             </div>
-            {e.historial.length === 0 ? (
+            {historialCompleto.length === 0 ? (
               <div className="py-10 border-2 border-dashed border-cs-border rounded-2xl text-center">
                 <div className="text-4xl mb-2 opacity-40">📝</div>
                 <p className="text-cs-muted font-medium">
@@ -282,7 +300,7 @@ export default async function ExpedienteEstudiantePage({
               </div>
             ) : (
               <div className="relative pl-7 space-y-6 before:absolute before:left-3 before:top-1 before:bottom-1 before:w-0.5 before:bg-cs-border">
-                {e.historial.map((h) => {
+                {historialCompleto.map((h) => {
                   const color = colorTipoHistorial(h.tipo)
                   return (
                     <div key={h.id} className="relative">

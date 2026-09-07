@@ -2,12 +2,11 @@
 
 import { Fragment, useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { getEstudiantePorId, getEstudiantes } from '@/app/actions/estudiantes'
-import { registrarSancion } from '@/app/actions/expediente'
+import { getProfesores, registrarSancion } from '@/app/actions/expediente'
+import GestionProfesores from '@/app/components/GestionProfesores'
 
 export default function NuevaSancionPage() {
-  const router = useRouter()
   const [estudiantes, setEstudiantes] = useState<
     Array<{
       id: string
@@ -22,6 +21,15 @@ export default function NuevaSancionPage() {
   const [error, setError] = useState<string | null>(null)
   const [cargando, setCargando] = useState(false)
   const [exito, setExito] = useState(false)
+  const [profesores, setProfesores] = useState<Array<{
+    id: string
+    nombre: string
+    apellido: string
+    cargo: string
+    email: string | null
+    firmaUrl: string | null
+  }>>([])
+  const [profesorSeleccionado, setProfesorSeleccionado] = useState<string>('')
   const [estudianteSeleccionado, setEstudianteSeleccionado] = useState<{
     id: string
     nombre: string
@@ -42,6 +50,7 @@ export default function NuevaSancionPage() {
       setEstudiantes(r.data || [])
       setCargandoLista(false)
     })
+    getProfesores().then((r) => setProfesores(r.data || []))
   }, [])
 
   async function cargarEstudiante(id: string) {
@@ -82,6 +91,7 @@ export default function NuevaSancionPage() {
       categoria: String(formData.get('categoria') || ''),
       motivo: String(formData.get('motivo') || ''),
       descripcion: String(formData.get('descripcion') || ''),
+      profesorId: String(formData.get('profesorId') || ''),
     }
 
     try {
@@ -91,13 +101,33 @@ export default function NuevaSancionPage() {
         return
       }
 
-      setExito(true)
+      if (profesorSeleccionado) {
+        const profesor = profesores.find((item) => item.id === profesorSeleccionado)
+        if (!profesor?.email) {
+          setError('La sanción se guardó, pero el profesor seleccionado no tiene un correo cargado.')
+          return
+        }
 
-      setTimeout(() => {
-        window.print()
-        router.push('/sanciones')
-        router.refresh()
-      }, 250)
+        const solicitud = await fetch(`/api/profesores/${profesorSeleccionado}/solicitud-firma`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ enviarCorreo: true }),
+        })
+        const respuestaSolicitud = await solicitud.json()
+        if (!solicitud.ok) {
+          setError(respuestaSolicitud.error || 'La sanción se guardó, pero no se pudo enviar la solicitud de firma.')
+          return
+        }
+      }
+
+      setExito(true)
+      await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())))
+      await Promise.all(
+        Array.from(document.querySelectorAll<HTMLImageElement>('.firma-impresion')).map((imagen) =>
+          imagen.decode().catch(() => undefined),
+        ),
+      )
+      window.print()
     } catch {
       setError('Error de conexión. Intente nuevamente.')
     } finally {
@@ -150,6 +180,17 @@ export default function NuevaSancionPage() {
           ✓ Sanción registrada correctamente. Redirigiendo...
         </div>
       )}
+
+      <div className="screen-only">
+        <GestionProfesores
+          profesores={profesores}
+          onFirmaActualizada={(profesorId, firmaUrl) => {
+            setProfesores((actuales) => actuales.map((profesor) =>
+              profesor.id === profesorId ? { ...profesor, firmaUrl } : profesor,
+            ))
+          }}
+        />
+      </div>
 
       <form onSubmit={handleSubmit} className="print-sheet bg-white border border-gray-300 shadow-lg">
         <header className="institution-header border-b-2 border-gray-800 pb-4">
@@ -218,6 +259,16 @@ export default function NuevaSancionPage() {
         </div>
 
         <p className="text-sm font-semibold mb-2">Señora DIRECTORA solicito que a este alumno se le aplique una medida disciplinaria por la siguiente falta:</p>
+        <div className="screen-only mb-4">
+          <label className={labelCls}>Profesor o preceptor que firma</label>
+          <select name="profesorId" value={profesorSeleccionado} onChange={(event) => setProfesorSeleccionado(event.target.value)} className={inputCls}>
+            <option value="">Seleccionar profesor...</option>
+            {profesores.map((profesor) => (
+              <option key={profesor.id} value={profesor.id}>{profesor.apellido}, {profesor.nombre} · {profesor.cargo}</option>
+            ))}
+          </select>
+          {profesores.length === 0 && <p className="text-xs text-cs-muted mt-1">Agregá profesores desde la sección Profesores y firmas.</p>}
+        </div>
         <div className="screen-only grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
           <select name="tipo" required className={inputCls}>
             <option value="">Tipo de sanción *</option>
@@ -234,7 +285,12 @@ export default function NuevaSancionPage() {
         <textarea name="descripcion" rows={4} className="paper-area w-full mt-1" />
 
         <div className="signature-row mt-5">
-          <span className="signature-line">Aclaración de la firma</span>
+          <span className="signature-line">
+            {profesores.find((profesor) => profesor.id === profesorSeleccionado)?.firmaUrl && (
+              <img src={profesores.find((profesor) => profesor.id === profesorSeleccionado)?.firmaUrl || ''} alt="Firma del profesor" className="firma-impresion mx-auto h-12 max-w-40 object-contain" />
+            )}
+            {profesores.find((profesor) => profesor.id === profesorSeleccionado) ? `${profesores.find((profesor) => profesor.id === profesorSeleccionado)?.nombre} ${profesores.find((profesor) => profesor.id === profesorSeleccionado)?.apellido}` : 'Aclaración de la firma'}
+          </span>
           <span className="signature-line">Profesor o Preceptor</span>
         </div>
 
@@ -249,7 +305,7 @@ export default function NuevaSancionPage() {
             ))}
             {!estudianteSeleccionado?.sanciones.length && <div className="col-span-4 py-5 text-gray-500 italic">Sin medidas disciplinarias anteriores</div>}
           </div>
-          <div className="signature-row mt-6"><span /><span className="signature-line">Profesor o Preceptor</span></div>
+          <div className="signature-row mt-6"><span /><span className="signature-line">{profesores.find((profesor) => profesor.id === profesorSeleccionado)?.firmaUrl && <img src={profesores.find((profesor) => profesor.id === profesorSeleccionado)?.firmaUrl || ''} alt="Firma del profesor" className="firma-impresion mx-auto h-12 max-w-40 object-contain" />}Profesor o Preceptor</span></div>
         </section>
 
         <section className="border-t-2 border-gray-800 mt-6 pt-3">
@@ -260,7 +316,10 @@ export default function NuevaSancionPage() {
             <label>Día y mes: <input className="paper-line w-32" /></label>
             <span className="signature-line">Preceptor</span>
             <label>Conforme y anotado: <input className="paper-line w-40" /></label>
-            <span className="signature-line">Responsable Directivo</span>
+            <span className="signature-line">
+              <img src="/firmaDirector-digital.png" alt="Firma del responsable directivo" width={100} height={120} className="firma-impresion mx-auto h-[120px] w-[100px] object-contain" />
+              Responsable Directivo
+            </span>
           </div>
         </section>
 
@@ -274,7 +333,13 @@ export default function NuevaSancionPage() {
           </div>
           <p className="text-sm mt-4">Señor/a <input value={estudianteSeleccionado ? `${estudianteSeleccionado.apellido}, ${estudianteSeleccionado.nombre}` : ''} readOnly className="paper-line w-64" /> comunico a Usted que al alumno se le han aplicado las medidas indicadas por la siguiente falta.</p>
           <p className="text-sm mt-4">con estas amonestaciones suman en total <input className="paper-line w-16" />.</p>
-          <div className="signature-row mt-8"><span /><span className="signature-line">Responsable Directivo</span></div>
+          <div className="signature-row mt-8">
+            <span />
+            <span className="signature-line">
+              <img src="/firmaDirector-digital.png" alt="Firma del responsable directivo" width={100} height={120} className="firma-impresion mx-auto h-[120px] w-[100px] object-contain" />
+              Responsable Directivo
+            </span>
+          </div>
           <p className="text-center italic font-semibold mt-6">Lugar y Fecha:</p>
           <p className="italic text-sm mt-6">Me notifico de la Sanción Disciplinaria, según corresponde a lo establecido en el Acuerdo Escolar de Convivencia.</p>
           <div className="signature-row mt-12"><span /><span className="signature-line">Firma del Responsable del Alumno</span></div>
@@ -284,7 +349,7 @@ export default function NuevaSancionPage() {
         <div className="screen-only pt-4 flex justify-end gap-3">
           <Link href="/sanciones" className="px-6 py-3 border border-cs-border rounded-xl font-bold">Cancelar</Link>
           <button type="submit" disabled={cargando || estudiantes.length === 0} className="px-8 py-3 bg-cs-danger text-white font-bold rounded-xl disabled:opacity-50">
-            {cargando ? 'Guardando...' : 'Aplicar e imprimir'}
+            {cargando ? 'Guardando y enviando...' : profesorSeleccionado ? 'Aplicar, enviar solicitud e imprimir' : 'Aplicar e imprimir'}
           </button>
         </div>
       </form>

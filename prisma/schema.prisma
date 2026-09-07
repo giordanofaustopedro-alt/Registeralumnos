@@ -3,172 +3,152 @@ generator client {
 }
 
 datasource db {
- 
-  provider  = "postgresql"
- 
+  provider = "postgresql"
 }
-
-// ==========================================
-// ENUMS (Especialidades y Tipos)
-// ==========================================
-
-enum Especialidad {
-  CICLO_BASICO // Para 1°, 2° y 3° año
-  HUMANIDADES  // Corresponde a división A (4°, 5°, 6°)
-  INFORMATICA  // Corresponde a división B (4°, 5°, 6°)
-}
-
-enum TipoResponsable {
-  PADRE
-  MADRE
-  TUTOR
-}
-
-enum TipoDocumento {
-  FICHA_MEDICA
-  AUTORIZACION
-  OTRO
-}
-
-// ==========================================
-// MODELO DE CURSOS Y ESTRUCTURA ESCOLAR
-// ==========================================
 
 model Curso {
   id           String        @id @default(uuid())
-  anio         Int           // 1, 2, 3, 4, 5, 6
-  division     String        // "A" o "B"
+  anio         Int
+  division     String
   especialidad Especialidad? @default(CICLO_BASICO)
+  creadoEn     DateTime      @default(now())
+  estudiantes  Estudiante[]
 
-  estudiantes Estudiante[]
-
-  creadoEn DateTime @default(now())
-
-  @@unique([anio, division]) // Evita duplicar "1° A", "5° B", etc.
+  @@unique([anio, division])
 }
 
-// ==========================================
-// MODELO DE ESTUDIANTES Y SUS RELACIONES
-// ==========================================
-
 model Estudiante {
-  id        String   @id @default(uuid())
-  nombre    String
-  apellido  String
-  dni       String   @unique
-  email     String?
-  direccion String?
-  curso     String?  // Guarda el año en texto ("1°", "2°", "3°", "4°", "5°", "6°")
-  division  String?  // Guarda "A" o "B"
-  fotoUrl   String?
-
-  // Relación opcional con el modelo Curso
-  cursoId  String?
-  cursoRef Curso?  @relation(fields: [cursoId], references: [id], onDelete: SetNull)
-
-  creadoEn      DateTime @default(now())
-  actualizadoEn DateTime @updatedAt
-
-  responsables   Responsable[]
-  infoMedica     InfoMedica?
-  documentos     Documento[]
+  id             String         @id @default(uuid())
+  dni            String         @unique
+  nombre         String
+  apellido       String
+  curso          String?
+  division       String?
+  creadoEn       DateTime       @default(now())
+  actualizadoEn  DateTime       @updatedAt
+  cursoId        String?
+  direccion      String?
+  email          String?
+  fotoUrl        String?
   amonestaciones Amonestacion[]
-  sanciones      Sancion[]
+  documentos     Documento[]
+  cursoRef       Curso?         @relation(fields: [cursoId], references: [id])
   historial      Historial[]
+  infoMedica     InfoMedica?
+  responsables   Responsable[]
+  sanciones      Sancion[]
 
   @@index([dni])
   @@index([apellido, nombre])
 }
 
 model Responsable {
-  id           String @id @default(uuid())
+  id           String           @id @default(uuid())
   estudianteId String
-
-  estudiante Estudiante @relation(fields: [estudianteId], references: [id], onDelete: Cascade)
-
-  tipo       TipoResponsable?
-  parentesco String?
-  nombre     String
-  apellido   String?
-  dni        String?
-  telefono   String?
-  email      String?
-  direccion  String?
+  parentesco   String?
+  nombre       String
+  dni          String?
+  telefono     String?
+  email        String?
+  apellido     String?
+  direccion    String?
+  tipo         TipoResponsable?
+  estudiante   Estudiante       @relation(fields: [estudianteId], references: [id], onDelete: Cascade)
 
   @@index([estudianteId])
 }
 
 model InfoMedica {
-  id           String @id @default(uuid())
-  estudianteId String @unique
-
-  estudiante Estudiante @relation(fields: [estudianteId], references: [id], onDelete: Cascade)
-
+  id                 String     @id @default(uuid())
+  estudianteId       String     @unique
   grupoSanguineo     String?
-  alergias            String?
+  alergias           String?
   medicacion         String?
   enfermedades       String?
-  problemasCardiacos String?
   observaciones      String?
+  problemasCardiacos String?
+  estudiante         Estudiante @relation(fields: [estudianteId], references: [id], onDelete: Cascade)
 }
 
 model Documento {
-  id           String @id @default(uuid())
+  id           String        @id @default(uuid())
   estudianteId String
-
-  estudiante Estudiante @relation(fields: [estudianteId], references: [id], onDelete: Cascade)
-
-  tipo       TipoDocumento @default(OTRO)
-  nombre     String?
-  titulo     String
-  archivoUrl String
-  creadoEn   DateTime      @default(now())
+  titulo       String
+  archivoUrl   String
+  creadoEn     DateTime      @default(now())
+  nombre       String?
+  tipo         TipoDocumento @default(OTRO)
+  estudiante   Estudiante    @relation(fields: [estudianteId], references: [id], onDelete: Cascade)
 
   @@index([estudianteId])
 }
 
 model Amonestacion {
-  id           String @id @default(uuid())
+  id           String     @id @default(uuid())
   estudianteId String
-
-  estudiante Estudiante @relation(fields: [estudianteId], references: [id], onDelete: Cascade)
-
-  motivo      String
-  descripcion String?
-  fecha       DateTime @default(now())
+  motivo       String
+  descripcion  String?
+  fecha        DateTime   @default(now())
+  estudiante   Estudiante @relation(fields: [estudianteId], references: [id], onDelete: Cascade)
 
   @@index([estudianteId])
 }
 
 model Sancion {
-  id           String @id @default(uuid())
-  estudianteId String
-
-  estudiante Estudiante @relation(fields: [estudianteId], references: [id], onDelete: Cascade)
-
-  tipo        String
-  categoria   String?
-  motivo      String
-  descripcion String?
-  fecha       DateTime @default(now())
-
-  firmadaPorEstudiante Boolean   @default(false)
+  id                   String     @id @default(uuid())
+  estudianteId         String
+  tipo                 String
+  categoria            String?
+  motivo               String
+  fecha                DateTime   @default(now())
+  descripcion          String?
   fechaFirma           DateTime?
+  firmadaPorEstudiante Boolean    @default(false)
+  profesorId           String?
+  estudiante           Estudiante @relation(fields: [estudianteId], references: [id], onDelete: Cascade)
+  profesor             Profesor?  @relation(fields: [profesorId], references: [id])
 
+  @@index([profesorId])
   @@index([estudianteId])
 }
 
+model Profesor {
+  id               String           @id @default(uuid())
+  nombre           String
+  apellido         String
+  cargo            String
+  firmaUrl         String?
+  activo           Boolean          @default(true)
+  creadoEn         DateTime         @default(now())
+  email            String?
+  sanciones        Sancion[]
+  solicitudesFirma SolicitudFirma[]
+
+  @@index([apellido, nombre])
+}
+
+model SolicitudFirma {
+  id         String    @id @default(uuid())
+  token      String    @unique
+  profesorId String
+  creadoEn   DateTime  @default(now())
+  expiraEn   DateTime
+  usadoEn    DateTime?
+  profesor   Profesor  @relation(fields: [profesorId], references: [id], onDelete: Cascade)
+
+  @@index([profesorId])
+  @@index([expiraEn])
+}
+
 model Historial {
-  id           String @id @default(uuid())
+  id           String     @id @default(uuid())
   estudianteId String
-
-  estudiante Estudiante @relation(fields: [estudianteId], references: [id], onDelete: Cascade)
-
-  tipo        String
-  categoria   String?
-  motivo      String
-  descripcion String?
-  fecha       DateTime @default(now())
+  tipo         String
+  categoria    String?
+  motivo       String
+  descripcion  String?
+  fecha        DateTime   @default(now())
+  estudiante   Estudiante @relation(fields: [estudianteId], references: [id], onDelete: Cascade)
 
   @@index([estudianteId])
 }
@@ -182,4 +162,22 @@ model Recurso {
   archivoUrl     String
   esDescargable  Boolean  @default(true)
   creadoEn       DateTime @default(now())
+}
+
+enum Especialidad {
+  HUMANIDADES
+  INFORMATICA
+  CICLO_BASICO
+}
+
+enum TipoResponsable {
+  PADRE
+  MADRE
+  TUTOR
+}
+
+enum TipoDocumento {
+  FICHA_MEDICA
+  AUTORIZACION
+  OTRO
 }

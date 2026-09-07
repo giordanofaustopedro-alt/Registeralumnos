@@ -12,13 +12,18 @@ type Campo = {
   tipo?: 'textarea'
 }
 
+type ResultadoAccion = {
+  success?: boolean
+  error?: string
+}
+
 type Props = {
   titulo: string
   campos: Campo[]
   // Permite aceptar tanto funciones que reciben Record<string, string> como FormData o Server Actions directas
   onSubmit: (
-    data: any,
-  ) => Promise<{ success?: boolean; error?: string } | void | any>
+    data: never,
+  ) => Promise<unknown>
   exitoMsg: string
   submitText: string
   color?: 'blue' | 'red' | 'green'
@@ -55,9 +60,10 @@ export default function FormularioAccion({
 
     try {
       // Intentamos enviar tanto el objeto clave-valor como FormData según lo que requiera la función
-      const resultado = await onSubmit(dataObj)
+      const enviar = onSubmit as unknown as (data: Record<string, string>) => Promise<ResultadoAccion | void>
+      const resultado = await enviar(dataObj)
 
-      if (resultado && typeof resultado === 'object' && resultado.error) {
+      if (resultado && typeof resultado === 'object' && 'error' in resultado && typeof resultado.error === 'string') {
         setError(resultado.error)
         return
       }
@@ -70,9 +76,9 @@ export default function FormularioAccion({
         setAbierto(false)
         setExito(null)
       }, 1500)
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error detectado en FormularioAccion:', err)
-      setError(err?.message || 'Error de conexión o fallo en el servidor. Intente nuevamente.')
+      setError(err instanceof Error ? err.message : 'Error de conexión o fallo en el servidor. Intente nuevamente.')
     } finally {
       setCargando(false)
     }

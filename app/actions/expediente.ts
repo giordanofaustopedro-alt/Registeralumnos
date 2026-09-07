@@ -21,7 +21,95 @@ const SancionSchema = z.object({
   }),
   motivo: z.string().min(5, 'El motivo es obligatorio'),
   descripcion: z.string().optional(),
+  profesorId: z.string().uuid().optional().or(z.literal('')),
 })
+
+const ProfesorSchema = z.object({
+  nombre: z.string().trim().min(2, 'El nombre es obligatorio'),
+  apellido: z.string().trim().min(2, 'El apellido es obligatorio'),
+  cargo: z.string().trim().min(2, 'El cargo es obligatorio'),
+  email: z.string().trim().email('Email inválido').optional().or(z.literal('')),
+  firmaUrl: z.string().startsWith('data:image/').max(2_000_000).optional().or(z.literal('')),
+})
+
+export async function getProfesores() {
+  try {
+    const profesores = await prisma.profesor.findMany({
+      where: { activo: true },
+      orderBy: [{ apellido: 'asc' }, { nombre: 'asc' }],
+    })
+    return { success: true, data: profesores }
+  } catch (error) {
+    console.error('Error al obtener profesores:', error)
+    return { success: false, error: 'No se pudieron obtener los profesores.' }
+  }
+}
+
+export async function crearProfesor(input: {
+  nombre: string
+  apellido: string
+  cargo: string
+  email?: string
+  firmaUrl?: string
+}) {
+  const validacion = ProfesorSchema.safeParse(input)
+  if (!validacion.success) {
+    return { success: false, error: validacion.error.issues[0].message }
+  }
+
+  try {
+    const profesor = await prisma.profesor.create({
+      data: { ...validacion.data, email: validacion.data.email || null, firmaUrl: validacion.data.firmaUrl || null },
+    })
+    revalidatePath('/sanciones')
+    revalidatePath('/sanciones/nueva')
+    return { success: true, data: profesor }
+  } catch (error) {
+    console.error('Error al crear profesor:', error)
+    return { success: false, error: 'No se pudo guardar el profesor.' }
+  }
+}
+
+export async function vincularFirmaProfesor(profesorId: string, firmaUrl: string) {
+  const validacion = z.object({
+    profesorId: z.string().uuid(),
+    firmaUrl: z.string().startsWith('data:image/').max(2_000_000),
+  }).safeParse({ profesorId, firmaUrl })
+
+  if (!validacion.success) {
+    return { success: false, error: 'La firma debe ser una imagen válida.' }
+  }
+
+  try {
+    await prisma.profesor.update({
+      where: { id: profesorId },
+      data: { firmaUrl },
+    })
+    revalidatePath('/sanciones')
+    revalidatePath('/sanciones/nueva')
+    return { success: true }
+  } catch (error) {
+    console.error('Error al vincular firma:', error)
+    return { success: false, error: 'No se pudo vincular la firma.' }
+  }
+}
+
+export async function eliminarProfesor(profesorId: string) {
+  const validacion = z.string().uuid().safeParse(profesorId)
+  if (!validacion.success) {
+    return { success: false, error: 'El profesor seleccionado no es válido.' }
+  }
+
+  try {
+    await prisma.profesor.delete({ where: { id: profesorId } })
+    revalidatePath('/sanciones')
+    revalidatePath('/sanciones/nueva')
+    return { success: true }
+  } catch (error) {
+    console.error('Error al eliminar profesor:', error)
+    return { success: false, error: 'No se pudo eliminar el profesor.' }
+  }
+}
 
 export async function agregarResponsable(
   estudianteId: string,
@@ -62,6 +150,7 @@ export async function registrarSancion(
     categoria: string
     motivo: string
     descripcion?: string
+    profesorId?: string
   }
 ) {
   const validacion = SancionSchema.safeParse(input)
@@ -73,6 +162,7 @@ export async function registrarSancion(
     const sancion = await prisma.sancion.create({
       data: {
         ...validacion.data,
+        profesorId: validacion.data.profesorId || null,
         estudianteId,
       },
     })
@@ -86,6 +176,16 @@ export async function registrarSancion(
         estudianteId,
       },
     })
+
+    if (validacion.data.tipo === 'Amonestación') {
+      await prisma.amonestacion.create({
+        data: {
+          motivo: validacion.data.motivo,
+          descripcion: validacion.data.descripcion,
+          estudianteId,
+        },
+      })
+    }
 
     revalidatePath('/')
     revalidatePath('/sanciones')
