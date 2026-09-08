@@ -46,6 +46,7 @@
     "eslint-config-next": "15.1.7",
     "postcss": "^8.5.0",
     "prisma": "6.3.0",
+    "sharp": "^0.33.5",
     "tailwindcss": "^4.0.0",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0"
@@ -53,9 +54,11 @@
   "packageManager": "pnpm@9.15.0",
   "pnpm": {
     "onlyBuiltDependencies": [
+      "@prisma/client",
       "@prisma/engines",
       "esbuild",
       "prisma",
+      "sharp",
       "unrs-resolver"
     ],
     "supportedArchitectures": {
