@@ -27,18 +27,17 @@ export default function SelectorDocumento({ onSubmit }: Props) {
   const archivoRef = useRef<HTMLInputElement>(null)
   const carpetaRef = useRef<HTMLInputElement>(null)
   const [abierto, setAbierto] = useState(false)
-  const [origen, setOrigen] = useState<'archivo' | 'carpeta' | null>(null)
+ 
   const [archivo, setArchivo] = useState<File | null>(null)
   const [titulo, setTitulo] = useState('')
   const [cargando, setCargando] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  function abrir(origenElegido: 'archivo' | 'carpeta') {
-    setOrigen(origenElegido)
+function abrir(origenElegido: 'archivo' | 'carpeta') {
     setError(null)
     if (origenElegido === 'archivo') archivoRef.current?.click()
-    else carpetaRef.current?.click()
-  }
+   else carpetaRef.current?.click()
+}
 
   function seleccionarArchivo(event: React.ChangeEvent<HTMLInputElement>) {
     const seleccionado = event.target.files?.[0]
@@ -66,7 +65,6 @@ export default function SelectorDocumento({ onSubmit }: Props) {
         return
       }
       setAbierto(false)
-      setOrigen(null)
       setArchivo(null)
       setTitulo('')
       router.refresh()
