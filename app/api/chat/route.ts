@@ -1,5 +1,5 @@
 import { google } from '@ai-sdk/google'
-import { convertToModelMessages, stepCountIs, streamText, tool } from 'ai'
+import { convertToCoreMessages, streamText, tool } from 'ai'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { eliminarEstudiante } from '@/app/actions/estudiantes'
@@ -9,9 +9,7 @@ export const maxDuration = 30
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const messages = await convertToModelMessages(body.messages || [], {
-      ignoreIncompleteToolCalls: true,
-    })
+    const messages = convertToCoreMessages(body.messages || [])
 
     const result = streamText({
       model: google('gemini-3.6-flash'),
@@ -25,11 +23,11 @@ No reveles información de un alumno que no sea necesaria para responder la preg
 Para redactar una sanción, transformá el relato informal en un texto formal, objetivo y respetuoso, sin agregar hechos que no fueron proporcionados.
 Podés crear alumnos solo cuando el usuario proporcione todos los datos obligatorios y confirme que desea guardarlos. Antes de crear, buscá el DNI para evitar duplicados.`,
       messages,
-      stopWhen: stepCountIs(4),
+      maxSteps: 4,
       tools: {
         crearAlumno: tool({
           description: 'Crea un alumno nuevo en la base de datos después de confirmar todos sus datos.',
-          inputSchema: z.object({
+          parameters: z.object({
             dni: z.string().min(7),
             nombre: z.string().min(2),
             apellido: z.string().min(2),
@@ -73,7 +71,7 @@ Podés crear alumnos solo cuando el usuario proporcione todos los datos obligato
         }),
         buscarAlumno: tool({
           description: 'Busca alumnos por nombre, apellido o DNI y devuelve datos básicos.',
-          inputSchema: z.object({
+          parameters: z.object({
             busqueda: z.string().min(2),
           }),
           execute: async ({ busqueda }) => {
@@ -102,7 +100,7 @@ Podés crear alumnos solo cuando el usuario proporcione todos los datos obligato
         }),
         alumnosRecientes: tool({
           description: 'Devuelve los alumnos agregados recientemente, ordenados desde el ultimo incorporado.',
-          inputSchema: z.object({
+          parameters: z.object({
             dias: z.number().int().min(1).max(365).default(30),
             limite: z.number().int().min(1).max(50).default(10),
           }),
@@ -128,7 +126,7 @@ Podés crear alumnos solo cuando el usuario proporcione todos los datos obligato
         }),
         eliminarAlumno: tool({
           description: 'Elimina un alumno solo despues de que el usuario confirme explicitamente la operacion.',
-          inputSchema: z.object({
+          parameters: z.object({
             alumnoId: z.string(),
             confirmar: z.boolean(),
           }),
@@ -148,7 +146,7 @@ Podés crear alumnos solo cuando el usuario proporcione todos los datos obligato
         }),
         consultarSanciones: tool({
           description: 'Consulta las sanciones y amonestaciones registradas de un alumno.',
-          inputSchema: z.object({
+          parameters: z.object({
             alumnoId: z.string().optional(),
             nombreODni: z.string().optional(),
           }),
@@ -179,7 +177,7 @@ Podés crear alumnos solo cuando el usuario proporcione todos los datos obligato
         }),
         consultarResponsable: tool({
           description: 'Consulta los responsables y sus teléfonos de un alumno.',
-          inputSchema: z.object({
+          parameters: z.object({
             alumnoId: z.string().optional(),
             nombreODni: z.string().optional(),
           }),
@@ -210,7 +208,7 @@ Podés crear alumnos solo cuando el usuario proporcione todos los datos obligato
       },
     })
 
-    return result.toUIMessageStreamResponse()
+    return result.toDataStreamResponse()
   } catch (error) {
     console.error('Error en el asistente de Gemini:', error)
     return Response.json({ error: 'No se pudo iniciar el asistente.' }, { status: 500 })

@@ -2,7 +2,6 @@
 
 import { useRef, useState } from 'react'
 import { useChat } from '@ai-sdk/react'
-import { DefaultChatTransport } from 'ai'
 
 function textoMensaje(message: { parts?: Array<{ type: string; text?: string }> }) {
   return (message.parts || [])
@@ -20,9 +19,7 @@ export default function Chatbot() {
   const [subiendoArchivo, setSubiendoArchivo] = useState(false)
   const [estadoArchivo, setEstadoArchivo] = useState<string | null>(null)
   const archivoRef = useRef<HTMLInputElement>(null)
-  const { messages, sendMessage, status, error } = useChat({
-    transport: new DefaultChatTransport({ api: '/api/chat' }),
-  })
+  const { messages, append, status, error } = useChat({ api: '/api/chat' })
   const cargando = status === 'submitted' || status === 'streaming'
 
   async function enviar(event: React.FormEvent<HTMLFormElement>) {
@@ -30,7 +27,7 @@ export default function Chatbot() {
     const texto = entrada.trim()
     if (!texto || cargando) return
     setEntrada('')
-    await sendMessage({ text: texto })
+    await append({ role: 'user', content: texto })
   }
 
   async function guardarArchivo(event: React.FormEvent<HTMLFormElement>) {
