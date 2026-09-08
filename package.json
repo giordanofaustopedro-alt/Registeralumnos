@@ -53,26 +53,6 @@
     "typescript": "^5.7.0"
   },
   "packageManager": "pnpm@9.15.0",
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@prisma/client",
-      "@prisma/engines",
-      "esbuild",
-      "prisma",
-      "sharp",
-      "unrs-resolver"
-    ],
-    "supportedArchitectures": {
-      "os": [
-        "current",
-        "linux"
-      ],
-      "cpu": [
-        "current",
-        "x64"
-      ]
-    }
-  },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
   }
