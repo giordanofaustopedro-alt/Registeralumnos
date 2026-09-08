@@ -55,8 +55,13 @@
     "onlyBuiltDependencies": [
       "@prisma/engines",
       "esbuild",
-      "prisma"
-    ]
+      "prisma",
+      "unrs-resolver"
+    ],
+    "supportedArchitectures": {
+      "os": ["current", "linux"],
+      "cpu": ["current", "x64"]
+    }
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
