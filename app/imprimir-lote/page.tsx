@@ -171,19 +171,6 @@ function VistaImpresionLote() {
             </div>
           )}
 
-          {(seleccion[e.id] || docs).includes('boletin') && (
-            <div className="border p-4 rounded text-xs space-y-3">
-              <h3 className="font-bold underline uppercase text-center">Informe de conducta / boletín</h3>
-              <p><strong>Alumno:</strong> {e.apellido}, {e.nombre}</p>
-              <p><strong>Curso:</strong> {e.curso || 'S/D'} &quot;{e.division || 'S/D'}&quot;</p>
-              <p>Observaciones de conducta: ____________________________________________________</p>
-              <div className="pt-10 grid grid-cols-2 gap-8 text-center text-[10px]">
-                <div className="border-t border-black pt-1">Firma del preceptor</div>
-                <div className="border-t border-black pt-1">Firma del responsable directivo</div>
-              </div>
-            </div>
-          )}
-
           {/* Salto de página para la impresión de cada alumno */}
           <style jsx>{`
             @media print {

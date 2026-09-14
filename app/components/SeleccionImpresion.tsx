@@ -9,13 +9,12 @@ interface Estudiante {
   curso?: string
 }
 
-type Documento = 'amonestacion' | 'fichaSalud' | 'autorizacionViaje' | 'boletin'
+type Documento = 'amonestacion' | 'fichaSalud' | 'autorizacionViaje'
 
 const documentosDisponibles: Array<{ id: Documento; etiqueta: string }> = [
   { id: 'amonestacion', etiqueta: 'Amonestaciones' },
   { id: 'fichaSalud', etiqueta: 'Ficha médica' },
   { id: 'autorizacionViaje', etiqueta: 'Viaje' },
-  { id: 'boletin', etiqueta: 'Boletín' },
 ]
 
 export default function SeleccionImpresion({ estudiantes }: { estudiantes: Estudiante[] }) {

@@ -34,6 +34,7 @@ export default function NuevaSancionPage() {
     id: string
     nombre: string
     apellido: string
+    dni: string
     curso: string | null
     division: string | null
     direccion: string | null
@@ -65,6 +66,7 @@ export default function NuevaSancionPage() {
         id: resultado.data.id,
         nombre: resultado.data.nombre,
         apellido: resultado.data.apellido,
+        dni: resultado.data.dni,
         curso: resultado.data.curso,
         division: resultado.data.division,
         direccion: resultado.data.direccion,
@@ -223,6 +225,9 @@ export default function NuevaSancionPage() {
           </label>
           <label className="font-bold text-right">Alumno:
             <input value={estudianteSeleccionado ? `${estudianteSeleccionado.apellido}, ${estudianteSeleccionado.nombre}` : ''} readOnly className="paper-line ml-2 w-48" />
+          </label>
+          <label className="font-bold">DNI:
+            <input value={estudianteSeleccionado?.dni || ''} readOnly className="paper-line ml-2 w-28" />
           </label>
         </div>
 
