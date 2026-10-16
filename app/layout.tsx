@@ -1,8 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
-import Sidebar from './components/Sidebar'
-import Chatbot from './components/Chatbot'
+import AppShell from './components/AppShell'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
@@ -20,9 +19,7 @@ export default function RootLayout({
       <body
         className={`${inter.className} bg-cs-surface min-h-screen flex text-cs-text antialiased`}
       >
-        <Sidebar />
-        <main className="flex-1 p-8 overflow-y-auto">{children}</main>
-        <Chatbot />
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   )

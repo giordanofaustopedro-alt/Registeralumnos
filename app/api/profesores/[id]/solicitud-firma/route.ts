@@ -2,28 +2,8 @@ import { randomBytes } from 'node:crypto'
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
-import { emailConfigurado, transporter } from '@/lib/email'
-
-async function enviarSolicitudFirma({
-  nombre,
-  email,
-  token,
-  baseUrl,
-}: {
-  nombre: string
-  email: string
-  token: string
-  baseUrl: string
-}) {
-  const urlFirma = `${baseUrl.replace(/\/$/, '')}/firmar/profesor/${token}`
-  await transporter.sendMail({
-    from: `"Preceptoría Escolar" <${process.env.EMAIL_USER}>`,
-    to: email,
-    subject: 'Solicitud de firma digital',
-    text: `Hola ${nombre},\n\nPodés firmar digitalmente desde este enlace (válido por 30 minutos y de un solo uso):\n${urlFirma}`,
-    html: `<p>Hola ${nombre},</p><p>Podés firmar digitalmente desde este enlace:</p><p><a href="${urlFirma}">Firmar digitalmente</a></p><p>El enlace vence en 30 minutos y es de un solo uso.</p>`,
-  })
-}
+import { emailConfigurado } from '@/lib/email'
+import { enviarCorreoSolicitudFirma } from '@/lib/solicitudes-firma'
 
 export async function POST(
   request: Request,
@@ -50,7 +30,7 @@ export async function POST(
       }
 
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin
-      await enviarSolicitudFirma({ nombre: profesor.nombre, email: profesor.email, token: cuerpo.token, baseUrl })
+      await enviarCorreoSolicitudFirma({ nombre: profesor.nombre, email: profesor.email, token: cuerpo.token, baseUrl })
       return NextResponse.json({ enviado: true })
     }
 
@@ -77,7 +57,7 @@ export async function POST(
     if (cuerpo.enviarCorreo && profesor.email) {
       try {
         const baseUrl = process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin
-        await enviarSolicitudFirma({ nombre: profesor.nombre, email: profesor.email, token: solicitud.token, baseUrl })
+        await enviarCorreoSolicitudFirma({ nombre: profesor.nombre, email: profesor.email, token: solicitud.token, baseUrl })
       } catch (error) {
         console.error('Error al enviar solicitud de firma con Nodemailer:', error)
         return NextResponse.json({ error: 'La solicitud se creó, pero no se pudo enviar el correo.' }, { status: 502 })

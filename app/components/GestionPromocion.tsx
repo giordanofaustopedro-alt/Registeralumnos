@@ -27,11 +27,13 @@ export default function GestionPromocion({ cursos }: Props) {
     setEstado(null)
     try {
       const respuesta = await fetch('/api/cursos/promover', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ estudiantesIds: seleccionados, nuevoCursoId }) })
-      const resultado = await respuesta.json()
-      if (!respuesta.ok) throw new Error(resultado.error)
+      const resultado = await respuesta.json().catch(() => null) as { success?: boolean; actualizados?: number; error?: string } | null
+      if (!respuesta.ok || !resultado?.success) {
+        throw new Error(resultado?.error || 'No se pudo cambiar de curso.')
+      }
       setSeleccionados([])
       setNuevoCursoId('')
-      setEstado(`${resultado.actualizados} alumno(s) actualizado(s).`)
+      setEstado(`${resultado.actualizados ?? 0} alumno(s) actualizado(s).`)
       router.refresh()
     } catch (error) {
       setEstado(error instanceof Error ? error.message : 'No se pudo cambiar de curso.')
@@ -61,7 +63,7 @@ export default function GestionPromocion({ cursos }: Props) {
           <option value="">Elegir curso destino</option>
           {cursos.map((curso) => <option key={curso.id} value={curso.id}>{curso.anio}° &quot;{curso.division}&quot;</option>)}
         </select>
-        <button type="button" onClick={promover} disabled={cargando} className="px-5 py-2.5 bg-cs-green hover:bg-cs-green-light text-white rounded-xl font-bold text-sm disabled:opacity-50">
+        <button type="button" onClick={promover} disabled={cargando} className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-sm disabled:opacity-50">
           {cargando ? 'Actualizando...' : `Cambiar curso (${seleccionados.length})`}
         </button>
       </div>

@@ -3,6 +3,8 @@
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
+import { randomUUID } from 'node:crypto'
+import { guardarSancionIdempotente, SancionInputSchema } from '@/lib/sanciones'
 
 const ResponsableSchema = z.object({
   nombre: z.string().min(2, 'El nombre es obligatorio'),
@@ -10,18 +12,6 @@ const ResponsableSchema = z.object({
   parentesco: z.string().min(2, 'El parentesco es obligatorio'),
   telefono: z.string().min(6, 'El teléfono es obligatorio'),
   email: z.string().email('Email inválido').optional().or(z.literal('')),
-})
-
-const SancionSchema = z.object({
-  tipo: z.enum(['Amonestación', 'Suspensión', 'Llamado a padres', 'Observación'], {
-    message: 'El tipo de sanción no está permitido.',
-  }),
-  categoria: z.enum(['Disciplina', 'Conducta', 'Falta de asistencia', 'Uso indebido de tecnología', 'Incumplimiento de tareas', 'Otro'], {
-    message: 'La categoría no está permitida.',
-  }),
-  motivo: z.string().min(5, 'El motivo es obligatorio'),
-  descripcion: z.string().optional(),
-  profesorId: z.string().uuid().optional().or(z.literal('')),
 })
 
 const ProfesorSchema = z.object({
@@ -151,41 +141,24 @@ export async function registrarSancion(
     motivo: string
     descripcion?: string
     profesorId?: string
-  }
+  },
+  sancionId?: string,
 ) {
-  const validacion = SancionSchema.safeParse(input)
+  const validacion = SancionInputSchema.safeParse(input)
   if (!validacion.success) {
     return { success: false, error: validacion.error.issues[0].message }
   }
+  const idValidado = sancionId ? z.string().uuid().safeParse(sancionId) : null
+  if (idValidado && !idValidado.success) {
+    return { success: false, error: 'El identificador de la sanción no es válido.' }
+  }
 
   try {
-    const sancion = await prisma.sancion.create({
-      data: {
-        ...validacion.data,
-        profesorId: validacion.data.profesorId || null,
-        estudianteId,
-      },
-    })
-
-    await prisma.historial.create({
-      data: {
-        tipo: validacion.data.tipo,
-        categoria: validacion.data.categoria,
-        motivo: validacion.data.motivo,
-        descripcion: validacion.data.descripcion,
-        estudianteId,
-      },
-    })
-
-    if (validacion.data.tipo === 'Amonestación') {
-      await prisma.amonestacion.create({
-        data: {
-          motivo: validacion.data.motivo,
-          descripcion: validacion.data.descripcion,
-          estudianteId,
-        },
-      })
-    }
+    const { sancion } = await guardarSancionIdempotente(
+      estudianteId,
+      validacion.data,
+      idValidado?.success ? idValidado.data : randomUUID(),
+    )
 
     revalidatePath('/')
     revalidatePath('/sanciones')

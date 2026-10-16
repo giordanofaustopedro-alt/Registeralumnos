@@ -3,8 +3,20 @@
 import { Fragment, useState, useEffect } from 'react'
 import Link from 'next/link'
 import { getEstudiantePorId, getEstudiantes } from '@/app/actions/estudiantes'
-import { getProfesores, registrarSancion } from '@/app/actions/expediente'
+import { getProfesores } from '@/app/actions/expediente'
 import GestionProfesores from '@/app/components/GestionProfesores'
+import type { Sancion } from '@prisma/client'
+
+type EstudianteFormulario = {
+  id: string
+  nombre: string
+  apellido: string
+  dni: string
+  curso: string | null
+  division: string | null
+  direccion: string | null
+  sanciones: Array<Pick<Sancion, 'fecha' | 'tipo' | 'categoria' | 'motivo'>>
+}
 
 export default function NuevaSancionPage() {
   const [estudiantes, setEstudiantes] = useState<
@@ -21,6 +33,7 @@ export default function NuevaSancionPage() {
   const [error, setError] = useState<string | null>(null)
   const [cargando, setCargando] = useState(false)
   const [exito, setExito] = useState(false)
+  const [mensajeExito, setMensajeExito] = useState('')
   const [profesores, setProfesores] = useState<Array<{
     id: string
     nombre: string
@@ -30,38 +43,67 @@ export default function NuevaSancionPage() {
     firmaUrl: string | null
   }>>([])
   const [profesorSeleccionado, setProfesorSeleccionado] = useState<string>('')
-  const [estudianteSeleccionado, setEstudianteSeleccionado] = useState<{
-    id: string
-    nombre: string
-    apellido: string
-    dni: string
-    curso: string | null
-    division: string | null
-    direccion: string | null
-    sanciones: Array<{
-      fecha: Date
-      tipo: string
-      categoria: string | null
-      motivo: string
-    }>
-  } | null>(null)
+  const [estudianteSeleccionado, setEstudianteSeleccionado] = useState<EstudianteFormulario | null>(null)
 
   useEffect(() => {
-    getEstudiantes().then((r) => {
-      setEstudiantes(r.data || [])
-      setCargandoLista(false)
-    })
-    getProfesores().then((r) => setProfesores(r.data || []))
+    let cancelado = false
+
+    async function cargarCatalogos() {
+      try {
+        const [resultadoEstudiantes, resultadoProfesores] = await Promise.all([getEstudiantes(), getProfesores()])
+        if (cancelado) return
+
+        if (!resultadoEstudiantes.success || !resultadoEstudiantes.data) {
+          throw new Error(resultadoEstudiantes.error || 'No se pudieron cargar los estudiantes.')
+        }
+        if (!resultadoProfesores.success || !resultadoProfesores.data) {
+          throw new Error(resultadoProfesores.error || 'No se pudieron cargar los profesores.')
+        }
+
+        setEstudiantes(resultadoEstudiantes.data.map((estudiante) => ({
+          id: estudiante.id,
+          nombre: estudiante.nombre,
+          apellido: estudiante.apellido,
+          dni: estudiante.dni,
+          curso: estudiante.curso,
+          division: estudiante.division,
+        })))
+        setProfesores(resultadoProfesores.data.map((profesor) => ({
+          id: profesor.id,
+          nombre: profesor.nombre,
+          apellido: profesor.apellido,
+          cargo: profesor.cargo,
+          email: profesor.email,
+          firmaUrl: profesor.firmaUrl,
+        })))
+      } catch (error) {
+        if (!cancelado) {
+          setError(error instanceof Error ? error.message : 'No se pudieron cargar los datos.')
+        }
+      } finally {
+        if (!cancelado) setCargandoLista(false)
+      }
+    }
+
+    void cargarCatalogos()
+    return () => {
+      cancelado = true
+    }
   }, [])
 
   async function cargarEstudiante(id: string) {
+    setError(null)
     if (!id) {
       setEstudianteSeleccionado(null)
       return
     }
 
-    const resultado = await getEstudiantePorId(id)
-    if (resultado.success && resultado.data) {
+    setEstudianteSeleccionado(null)
+    try {
+      const resultado = await getEstudiantePorId(id)
+      if (!resultado.success || !resultado.data) {
+        throw new Error(resultado.error || 'No se pudo cargar el expediente del estudiante.')
+      }
       setEstudianteSeleccionado({
         id: resultado.data.id,
         nombre: resultado.data.nombre,
@@ -77,6 +119,8 @@ export default function NuevaSancionPage() {
           motivo: sancion.motivo,
         })),
       })
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'No se pudo cargar el expediente del estudiante.')
     }
   }
 
@@ -85,6 +129,7 @@ export default function NuevaSancionPage() {
     setCargando(true)
     setError(null)
     setExito(false)
+    setMensajeExito('')
 
     const formData = new FormData(e.currentTarget)
     const estudianteId = String(formData.get('estudianteId') || '')
@@ -97,31 +142,36 @@ export default function NuevaSancionPage() {
     }
 
     try {
-      const resultado = await registrarSancion(estudianteId, data)
-      if (!resultado.success) {
-        setError(resultado.error || 'Error al registrar la sanción')
+      if (!estudianteSeleccionado || estudianteSeleccionado.id !== estudianteId) {
+        setError('Seleccioná un estudiante antes de guardar la sanción.')
         return
       }
-
-      if (profesorSeleccionado) {
-        const profesor = profesores.find((item) => item.id === profesorSeleccionado)
-        if (!profesor?.email) {
-          setError('La sanción se guardó, pero el profesor seleccionado no tiene un correo cargado.')
-          return
-        }
-
-        const solicitud = await fetch(`/api/profesores/${profesorSeleccionado}/solicitud-firma`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ enviarCorreo: true }),
-        })
-        const respuestaSolicitud = await solicitud.json()
-        if (!solicitud.ok) {
-          setError(respuestaSolicitud.error || 'La sanción se guardó, pero no se pudo enviar la solicitud de firma.')
-          return
-        }
+      const fechaFormulario = String(formData.get('fecha') || '')
+      const fechaRegistro = fechaFormulario
+        ? new Date(`${fechaFormulario}T12:00:00`).toISOString()
+        : new Date().toISOString()
+      const respuesta = await fetch('/api/sanciones', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: crypto.randomUUID(),
+          estudianteId,
+          fecha: fechaRegistro,
+          ...data,
+        }),
+      })
+      const resultado = await respuesta.json().catch(() => null) as {
+        success?: boolean
+        emailError?: string
+        error?: string
+      } | null
+      if (!respuesta.ok || !resultado?.success) {
+        throw new Error(resultado?.error || 'No se pudo guardar la sanción en el servidor.')
       }
 
+      setMensajeExito(resultado.emailError
+        ? `Sanción registrada. ${resultado.emailError}`
+        : 'Sanción registrada correctamente.')
       setExito(true)
       await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())))
       await Promise.all(
@@ -130,8 +180,8 @@ export default function NuevaSancionPage() {
         ),
       )
       window.print()
-    } catch {
-      setError('Error de conexión. Intente nuevamente.')
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'No se pudo guardar la sanción en el servidor.')
     } finally {
       setCargando(false)
     }
@@ -179,10 +229,9 @@ export default function NuevaSancionPage() {
       )}
       {exito && (
         <div className="screen-only p-4 bg-cs-success-soft border border-cs-success/30 text-cs-green rounded-2xl text-sm font-bold shadow-sm">
-          ✓ Sanción registrada correctamente. Redirigiendo...
+          ✓ {mensajeExito}
         </div>
       )}
-
       <div className="screen-only">
         <GestionProfesores
           profesores={profesores}
@@ -308,7 +357,7 @@ export default function NuevaSancionPage() {
                 <div>{new Date(sancion.fecha).toLocaleDateString('es-AR')}</div><div>{sancion.tipo}</div><div>—</div><div>{sancion.motivo}</div>
               </Fragment>
             ))}
-            {!estudianteSeleccionado?.sanciones.length && <div className="col-span-4 py-5 text-gray-500 italic">Sin medidas disciplinarias anteriores</div>}
+            {estudianteSeleccionado && !estudianteSeleccionado.sanciones.length && <div className="col-span-4 py-5 text-gray-500 italic">Sin medidas disciplinarias anteriores</div>}
           </div>
           <div className="signature-row mt-6"><span /><span className="signature-line">{profesores.find((profesor) => profesor.id === profesorSeleccionado)?.firmaUrl && <img src={profesores.find((profesor) => profesor.id === profesorSeleccionado)?.firmaUrl || ''} alt="Firma del profesor" className="firma-impresion mx-auto h-12 max-w-40 object-contain" />}Profesor o Preceptor</span></div>
         </section>

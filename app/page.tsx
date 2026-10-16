@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import { getEstudiantes } from '@/app/actions/estudiantes'
 
+export const dynamic = 'force-dynamic'
+
 export default async function HomePage() {
   const respuesta = await getEstudiantes()
   const estudiantes = respuesta.data || []
