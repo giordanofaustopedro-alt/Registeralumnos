@@ -85,8 +85,12 @@ export default function PaginaFirmaProfesor({ params }: { params: Promise<{ id: 
         <SignatureCanvas
           ref={sigCanvas}
           penColor="black"
+          minWidth={0.8}
+          maxWidth={2}
+          minDistance={0.5}
+          throttle={8}
           onBegin={() => setFirmaVacia(false)}
-          canvasProps={{ width: 900, height: 360, className: 'h-auto w-full', 'aria-label': 'Recuadro para dibujar la firma' }}
+          canvasProps={{ className: 'block h-72 w-full sm:h-80', 'aria-label': 'Recuadro para dibujar la firma' }}
         />
         {firmaVacia && valido === true && (
           <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm text-gray-400">Pon tu firma</span>
