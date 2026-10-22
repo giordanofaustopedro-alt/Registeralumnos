@@ -30,7 +30,14 @@ export async function POST(
       }
 
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin
-      await enviarCorreoSolicitudFirma({ nombre: profesor.nombre, email: profesor.email, token: cuerpo.token, baseUrl })
+      try {
+        await enviarCorreoSolicitudFirma({ nombre: profesor.nombre, email: profesor.email, token: cuerpo.token, baseUrl })
+      } catch (error) {
+        console.error('Error al enviar por correo el enlace de firma existente:', error)
+        return NextResponse.json({
+          error: 'El enlace de firma se generó, pero no se pudo enviar el correo. Revisá la configuración SMTP y las credenciales EMAIL_USER y EMAIL_PASS.',
+        }, { status: 502 })
+      }
       return NextResponse.json({ enviado: true })
     }
 
