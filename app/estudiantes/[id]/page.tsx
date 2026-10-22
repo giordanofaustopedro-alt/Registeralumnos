@@ -6,6 +6,22 @@ import FormularioAccion from './_components/FormularioAccion'
 import SelectorDocumento from './_components/SelectorDocumento'
 import ImprimirLegajoButton from './_components/ImprimirLegajoButton'
 
+function nombreParaDescarga(documento: { nombre: string | null; titulo: string; archivoUrl: string }) {
+  if (documento.nombre) return documento.nombre
+
+  const tipo = documento.archivoUrl.match(/^data:([^;,]+)/)?.[1]
+  const extensiones: Record<string, string> = {
+    'application/msword': 'doc',
+    'application/pdf': 'pdf',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
+    'image/jpeg': 'jpg',
+    'image/png': 'png',
+    'image/webp': 'webp',
+  }
+  const extension = tipo ? extensiones[tipo] : undefined
+  return extension ? `${documento.titulo}.${extension}` : documento.titulo
+}
+
 export default async function ExpedienteEstudiantePage({
   params,
 }: {
@@ -369,33 +385,37 @@ export default async function ExpedienteEstudiantePage({
               </div>
             ) : (
               <div className="space-y-3">
-                {e.documentos.map((d) => (
-                  <a
-                    key={d.id}
-                    href={d.archivoUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 p-4 rounded-2xl border border-cs-border hover:bg-cs-surface-alt transition group bg-cs-surface"
-                  >
-                    <div className="w-10 h-10 rounded-xl bg-cs-bg-soft/20 flex items-center justify-center text-xl shrink-0">
-                      📎
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-cs-text truncate group-hover:text-cs-green transition">
-                        {d.titulo}
-                      </p>
-                      {d.tipo && d.tipo !== 'OTRO' && (
-                        <p className="text-xs text-cs-muted mt-0.5">
-                          {d.tipo === 'FICHA_MEDICA'
-                            ? 'Ficha Médica'
-                            : d.tipo === 'AUTORIZACION'
-                              ? 'Autorización'
-                              : 'Otro'}
+                {e.documentos.map((d) => {
+                  const nombreArchivo = nombreParaDescarga(d)
+                  return (
+                    <a
+                      key={d.id}
+                      href={d.archivoUrl}
+                      download={nombreArchivo}
+                      title={`Descargar ${nombreArchivo}`}
+                      className="flex items-center gap-3 p-4 rounded-2xl border border-cs-border hover:bg-cs-surface-alt transition group bg-cs-surface"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-cs-bg-soft/20 flex items-center justify-center text-xl shrink-0">
+                        📎
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-cs-text truncate group-hover:text-cs-green transition">
+                          {d.titulo}
                         </p>
-                      )}
-                    </div>
-                  </a>
-                ))}
+                        {d.tipo && d.tipo !== 'OTRO' && (
+                          <p className="text-xs text-cs-muted mt-0.5">
+                            {d.tipo === 'FICHA_MEDICA'
+                              ? 'Ficha Médica'
+                              : d.tipo === 'AUTORIZACION'
+                                ? 'Autorización'
+                                : 'Otro'}
+                          </p>
+                        )}
+                      </div>
+                      <span className="shrink-0 text-xs font-bold text-cs-green">Descargar</span>
+                    </a>
+                  )
+                })}
               </div>
             )}
           </section>

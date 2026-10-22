@@ -71,15 +71,24 @@ export async function actualizarCurso(formData: FormData) {
   }
 
   try {
-    await prisma.curso.update({
-      where: { id },
-      data: {
-        anio,
-        division,
-        especialidad: especialidad as 'HUMANIDADES' | 'INFORMATICA' | 'CICLO_BASICO',
-      },
+    await prisma.$transaction(async (tx) => {
+      const curso = await tx.curso.update({
+        where: { id },
+        data: {
+          anio,
+          division,
+          especialidad: especialidad as 'HUMANIDADES' | 'INFORMATICA' | 'CICLO_BASICO',
+        },
+      })
+
+      await tx.estudiante.updateMany({
+        where: { cursoId: curso.id },
+        data: { curso: String(curso.anio), division: curso.division },
+      })
     })
     revalidatePath('/cursos')
+    revalidatePath('/estudiantes')
+    revalidatePath('/')
     return { success: true }
   } catch (error) {
     console.error('Error al actualizar curso:', error)

@@ -190,6 +190,7 @@ export async function agregarDocumento(
   data: {
     titulo: string
     archivoUrl: string
+    nombre?: string
     tipo?: 'FICHA_MEDICA' | 'AUTORIZACION' | 'OTRO'
   }
 ) {
@@ -198,6 +199,7 @@ export async function agregarDocumento(
       data: {
         titulo: data.titulo,
         archivoUrl: data.archivoUrl,
+        nombre: data.nombre,
         tipo: data.tipo || 'OTRO',
         estudianteId,
       },
