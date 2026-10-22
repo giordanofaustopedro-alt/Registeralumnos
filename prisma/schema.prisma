@@ -1,11 +1,13 @@
 generator client {
   provider = "prisma-client-js"
 }
+
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL") // Mantenlo si usas Supabase
 }
+
 model Curso {
   id           String        @id @default(uuid())
   anio         Int
@@ -18,42 +20,44 @@ model Curso {
 }
 
 model Estudiante {
-  id             String         @id @default(uuid())
-  dni            String         @unique
-  nombre         String
-  apellido       String
-  curso          String?
-  division       String?
-  creadoEn       DateTime       @default(now())
-  actualizadoEn  DateTime       @updatedAt
-  cursoId        String?
-  direccion      String?
-  email          String?
-  fotoUrl        String?
-  amonestaciones Amonestacion[]
-  documentos     Documento[]
-  cursoRef       Curso?         @relation(fields: [cursoId], references: [id])
-  historial      Historial[]
-  infoMedica     InfoMedica?
-  responsables   Responsable[]
-  sanciones      Sancion[]
+  id              String         @id @default(uuid())
+  dni             String         @unique
+  nombre          String
+  apellido        String
+  fechaNacimiento DateTime?      @db.Date
+  curso           String?
+  division        String?
+  creadoEn        DateTime       @default(now())
+  actualizadoEn   DateTime       @updatedAt
+  cursoId         String?
+  direccion       String?
+  email           String?
+  fotoUrl         String?
+  amonestaciones  Amonestacion[]
+  documentos      Documento[]
+  cursoRef        Curso?         @relation(fields: [cursoId], references: [id])
+  historial       Historial[]
+  infoMedica      InfoMedica?
+  responsables    Responsable[]
+  sanciones       Sancion[]
 
   @@index([dni])
   @@index([apellido, nombre])
 }
 
 model Responsable {
-  id           String           @id @default(uuid())
-  estudianteId String
-  parentesco   String?
-  nombre       String
-  dni          String?
-  telefono     String?
-  email        String?
-  apellido     String?
-  direccion    String?
-  tipo         TipoResponsable?
-  estudiante   Estudiante       @relation(fields: [estudianteId], references: [id], onDelete: Cascade)
+  id              String           @id @default(uuid())
+  estudianteId    String
+  parentesco      String?
+  nombre          String
+  dni             String?
+  fechaNacimiento DateTime?        @db.Date
+  telefono        String?
+  email           String?
+  apellido        String?
+  direccion       String?
+  tipo            TipoResponsable?
+  estudiante      Estudiante       @relation(fields: [estudianteId], references: [id], onDelete: Cascade)
 
   @@index([estudianteId])
 }

@@ -27,6 +27,7 @@ export default function NuevoEstudiantePage() {
         dni: String(data.dni),
         nombre: String(data.nombre),
         apellido: String(data.apellido),
+        fechaNacimiento: String(data.fechaNacimiento || ''),
         curso: String(data.curso),
         division: String(data.division),
         email: String(data.email || ''),
@@ -108,6 +109,15 @@ export default function NuevoEstudiantePage() {
             <div>
               <label className={labelCls}>Apellido *</label>
               <input name="apellido" required placeholder="Ej: González" className={inputCls} />
+            </div>
+            <div>
+              <label className={labelCls}>Fecha de nacimiento</label>
+              <input
+                name="fechaNacimiento"
+                type="date"
+                max={new Date().toISOString().slice(0, 10)}
+                className={inputCls}
+              />
             </div>
             <div>
               <label className={labelCls}>Email</label>

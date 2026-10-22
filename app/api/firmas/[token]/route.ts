@@ -20,16 +20,23 @@ export async function GET(
 ) {
   const { token } = await params
   const solicitud = await obtenerSolicitud(token)
+  const headers = { 'Cache-Control': 'no-store, no-cache, must-revalidate' }
   if (!solicitud) {
-    return NextResponse.json({ error: 'Este enlace ya no es válido.' }, { status: 404 })
+    return NextResponse.json({ error: 'Este enlace ya no es válido.' }, { status: 404, headers })
   }
   if (solicitud.usadoEn) {
-    return NextResponse.json({ error: 'Este enlace ya fue utilizado.', firmada: true, firmaUrl: solicitud.profesor.firmaUrl }, { status: 410 })
+    return NextResponse.json(
+      { error: 'Este enlace ya fue utilizado.', firmada: true, firmaUrl: solicitud.profesor.firmaUrl },
+      { status: 410, headers },
+    )
   }
   if (solicitud.expiraEn < new Date()) {
-    return NextResponse.json({ error: 'Este enlace venció.', firmada: false }, { status: 410 })
+    return NextResponse.json({ error: 'Este enlace venció.', firmada: false }, { status: 410, headers })
   }
-  return NextResponse.json({ profesorNombre: `${solicitud.profesor.nombre} ${solicitud.profesor.apellido}` })
+  return NextResponse.json(
+    { profesorNombre: `${solicitud.profesor.nombre} ${solicitud.profesor.apellido}` },
+    { headers },
+  )
 }
 
 export async function POST(
@@ -63,7 +70,11 @@ export async function POST(
     })
 
     if (!resultado) return NextResponse.json({ error: 'Este enlace ya fue utilizado.' }, { status: 410 })
-    await notificarFirmaAlPreceptor(`${solicitud.profesor.nombre} ${solicitud.profesor.apellido}`)
+    try {
+      await notificarFirmaAlPreceptor(`${solicitud.profesor.nombre} ${solicitud.profesor.apellido}`)
+    } catch (error) {
+      console.error('La firma se guardó, pero no se pudo notificar al preceptor:', error)
+    }
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Error al guardar firma digital:', error)

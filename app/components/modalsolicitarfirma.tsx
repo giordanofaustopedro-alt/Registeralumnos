@@ -15,6 +15,7 @@ export default function ModalSolicitarFirma({ profesorId, profesorNombre, profes
   const [urlFirma, setUrlFirma] = useState('')
   const [token, setToken] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [estadoSeguimiento, setEstadoSeguimiento] = useState<string | null>(null)
   const [enviandoCorreo, setEnviandoCorreo] = useState(false)
 
   useEffect(() => {
@@ -39,18 +40,54 @@ export default function ModalSolicitarFirma({ profesorId, profesorNombre, profes
 
   useEffect(() => {
     if (!urlFirma) return
-    const token = urlFirma.split('/').pop()
-    const intervalo = window.setInterval(async () => {
-      const respuesta = await fetch(`/api/firmas/${token}`)
-      if (respuesta.status === 410) {
-        const resultado = await respuesta.json()
-        if (resultado.firmada) {
-          window.clearInterval(intervalo)
-          onFirmada(resultado.firmaUrl || null)
+    const tokenFirma = urlFirma.split('/').pop()
+    if (!tokenFirma) return
+
+    let activo = true
+    let temporizador: number
+
+    async function verificarFirma() {
+      try {
+        const respuesta = await fetch(`/api/firmas/${tokenFirma}`, { cache: 'no-store' })
+        const resultado = await respuesta.json() as {
+          error?: string
+          firmada?: boolean
+          firmaUrl?: string | null
         }
+        if (!activo) return
+
+        if (respuesta.status === 410) {
+          if (resultado.firmada && resultado.firmaUrl) {
+            onFirmada(resultado.firmaUrl)
+            return
+          }
+          setEstadoSeguimiento(resultado.firmada
+            ? 'La firma se registró, pero no se pudo recuperar. Actualizá la página y revisá el profesor.'
+            : resultado.error || 'El enlace de firma venció.')
+          return
+        }
+
+        if (respuesta.status === 404) {
+          setEstadoSeguimiento(resultado.error || 'El enlace de firma ya no existe.')
+          return
+        }
+        if (!respuesta.ok) {
+          setEstadoSeguimiento(resultado.error || 'No se pudo comprobar el estado de la firma. Se volverá a intentar.')
+        } else {
+          setEstadoSeguimiento(null)
+        }
+      } catch {
+        if (activo) setEstadoSeguimiento('No se pudo comprobar si llegó la firma. Se volverá a intentar automáticamente.')
       }
-    }, 3000)
-    return () => window.clearInterval(intervalo)
+
+      if (activo) temporizador = window.setTimeout(verificarFirma, 2000)
+    }
+
+    void verificarFirma()
+    return () => {
+      activo = false
+      window.clearTimeout(temporizador)
+    }
   }, [urlFirma, onFirmada])
 
   const enviarPorCorreo = async () => {
@@ -83,6 +120,7 @@ export default function ModalSolicitarFirma({ profesorId, profesorNombre, profes
         <p className="break-all text-[11px] text-gray-500">{urlFirma}</p>
         {profesorEmail ? <button type="button" onClick={enviarPorCorreo} disabled={!urlFirma || enviandoCorreo} className="w-full rounded-lg bg-emerald-700 py-2.5 text-sm font-bold text-white disabled:opacity-50">{enviandoCorreo ? 'Enviando...' : 'Enviar enlace por correo'}</button> : <p className="text-xs text-amber-600">Este profesor no tiene correo cargado.</p>}
         {error && <p className="text-xs font-semibold text-red-600">{error}</p>}
+        {estadoSeguimiento && <p className="text-xs font-semibold text-amber-700" role="status">{estadoSeguimiento}</p>}
         <p className="text-xs text-amber-600">El enlace vence en 30 minutos y se invalida al firmar.</p>
         <button type="button" onClick={onClose} className="w-full rounded-lg bg-gray-800 py-2.5 text-sm font-bold text-white">Cerrar</button>
       </div>

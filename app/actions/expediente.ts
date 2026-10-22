@@ -5,11 +5,13 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { randomUUID } from 'node:crypto'
 import { guardarSancionIdempotente, SancionInputSchema } from '@/lib/sanciones'
+import { FechaNacimientoSchema } from '@/lib/fecha-nacimiento'
 
 const ResponsableSchema = z.object({
   nombre: z.string().min(2, 'El nombre es obligatorio'),
   dni: z.string().min(7, 'El DNI debe tener al menos 7 caracteres'),
   parentesco: z.string().min(2, 'El parentesco es obligatorio'),
+  fechaNacimiento: FechaNacimientoSchema,
   telefono: z.string().min(6, 'El teléfono es obligatorio'),
   email: z.string().email('Email inválido').optional().or(z.literal('')),
 })
@@ -107,6 +109,7 @@ export async function agregarResponsable(
     nombre: string
     dni: string
     parentesco: string
+    fechaNacimiento?: string
     telefono: string
     email?: string
   }
@@ -130,6 +133,57 @@ export async function agregarResponsable(
   } catch (error) {
     console.error('Error al agregar responsable:', error)
     return { success: false, error: 'No se pudo vincular el responsable.' }
+  }
+}
+
+export async function actualizarFechaNacimientoResponsable(
+  estudianteId: string,
+  responsableId: string,
+  fechaNacimiento: string,
+) {
+  const idsValidos = z.object({
+    estudianteId: z.string().uuid(),
+    responsableId: z.string().uuid(),
+  }).safeParse({ estudianteId, responsableId })
+  const fechaValidada = FechaNacimientoSchema.safeParse(fechaNacimiento)
+
+  if (!idsValidos.success) return { success: false, error: 'El responsable no es válido.' }
+  if (!fechaValidada.success) return { success: false, error: fechaValidada.error.issues[0].message }
+
+  try {
+    const actualizacion = await prisma.responsable.updateMany({
+      where: { id: responsableId, estudianteId },
+      data: { fechaNacimiento: fechaValidada.data },
+    })
+    if (actualizacion.count !== 1) return { success: false, error: 'No se encontró el responsable.' }
+
+    revalidatePath(`/estudiantes/${estudianteId}`)
+    return { success: true }
+  } catch (error) {
+    console.error('Error al actualizar fecha de nacimiento del responsable:', error)
+    return { success: false, error: 'No se pudo guardar la fecha de nacimiento.' }
+  }
+}
+
+export async function eliminarResponsable(estudianteId: string, responsableId: string) {
+  const idsValidos = z.object({
+    estudianteId: z.string().uuid(),
+    responsableId: z.string().uuid(),
+  }).safeParse({ estudianteId, responsableId })
+  if (!idsValidos.success) return { success: false, error: 'El responsable seleccionado no es válido.' }
+
+  try {
+    const eliminacion = await prisma.responsable.deleteMany({
+      where: { id: responsableId, estudianteId },
+    })
+    if (eliminacion.count !== 1) return { success: false, error: 'No se encontró el responsable.' }
+
+    revalidatePath('/')
+    revalidatePath(`/estudiantes/${estudianteId}`)
+    return { success: true }
+  } catch (error) {
+    console.error('Error al eliminar responsable:', error)
+    return { success: false, error: 'No se pudo eliminar el responsable.' }
   }
 }
 
@@ -210,5 +264,26 @@ export async function agregarDocumento(
   } catch (error) {
     console.error('Error al agregar documento:', error)
     return { success: false, error: 'No se pudo guardar el documento.' }
+  }
+}
+
+export async function eliminarDocumento(estudianteId: string, documentoId: string) {
+  const idsValidos = z.object({
+    estudianteId: z.string().uuid(),
+    documentoId: z.string().uuid(),
+  }).safeParse({ estudianteId, documentoId })
+  if (!idsValidos.success) return { success: false, error: 'El documento seleccionado no es válido.' }
+
+  try {
+    const eliminacion = await prisma.documento.deleteMany({
+      where: { id: documentoId, estudianteId },
+    })
+    if (eliminacion.count !== 1) return { success: false, error: 'No se encontró el documento.' }
+
+    revalidatePath(`/estudiantes/${estudianteId}`)
+    return { success: true }
+  } catch (error) {
+    console.error('Error al eliminar documento:', error)
+    return { success: false, error: 'No se pudo eliminar el documento.' }
   }
 }

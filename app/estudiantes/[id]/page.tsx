@@ -1,10 +1,20 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { getEstudiantePorId, eliminarEstudiante } from '@/app/actions/estudiantes'
-import { agregarResponsable, registrarSancion, agregarDocumento } from '@/app/actions/expediente'
+import { actualizarFechaNacimientoEstudiante, getEstudiantePorId, eliminarEstudiante } from '@/app/actions/estudiantes'
+import {
+  actualizarFechaNacimientoResponsable,
+  agregarResponsable,
+  eliminarDocumento,
+  eliminarResponsable,
+  registrarSancion,
+  agregarDocumento,
+} from '@/app/actions/expediente'
 import FormularioAccion from './_components/FormularioAccion'
 import SelectorDocumento from './_components/SelectorDocumento'
 import ImprimirLegajoButton from './_components/ImprimirLegajoButton'
+import FechaNacimientoForm from './_components/FechaNacimientoForm'
+import EliminarRegistroButton from './_components/EliminarRegistroButton'
+import { fechaParaInput } from '@/lib/fecha-nacimiento'
 
 function nombreParaDescarga(documento: { nombre: string | null; titulo: string; archivoUrl: string }) {
   if (documento.nombre) return documento.nombre
@@ -58,6 +68,7 @@ export default async function ExpedienteEstudiantePage({
   const agregarResponsableAction = agregarResponsable.bind(null, id)
   const registrarSancionAction = registrarSancion.bind(null, id)
   const agregarDocumentoAction = agregarDocumento.bind(null, id)
+  const actualizarFechaEstudianteAction = actualizarFechaNacimientoEstudiante.bind(null, id)
 
   function colorTipoHistorial(tipo: string | null) {
     const t = (tipo || '').toLowerCase()
@@ -112,6 +123,10 @@ export default async function ExpedienteEstudiantePage({
                   <span className="text-sm text-cs-muted font-medium">✉️ {e.email}</span>
                 )}
               </div>
+              <FechaNacimientoForm
+                value={fechaParaInput(e.fechaNacimiento)}
+                onSubmit={actualizarFechaEstudianteAction}
+              />
               {e.direccion && (
                 <p className="text-sm text-cs-muted mt-2 font-medium">📍 {e.direccion}</p>
               )}
@@ -218,6 +233,7 @@ export default async function ExpedienteEstudiantePage({
                 campos={[
                   { name: 'nombre', label: 'Nombre y Apellido *', required: true },
                   { name: 'dni', label: 'DNI *', required: true },
+                  { name: 'fechaNacimiento', label: 'Fecha de nacimiento', type: 'date' },
                   {
                     name: 'parentesco',
                     label: 'Parentesco *',
@@ -261,6 +277,17 @@ export default async function ExpedienteEstudiantePage({
                           {r.dni && <div>🆔 {r.dni}</div>}
                           {r.telefono && <div>📞 {r.telefono}</div>}
                           {r.email && <div className="truncate">✉️ {r.email}</div>}
+                        </div>
+                        <FechaNacimientoForm
+                          value={fechaParaInput(r.fechaNacimiento)}
+                          onSubmit={actualizarFechaNacimientoResponsable.bind(null, id, r.id)}
+                        />
+                        <div className="mt-2">
+                          <EliminarRegistroButton
+                            etiqueta="Eliminar responsable"
+                            mensajeConfirmacion={`¿Eliminar a ${r.nombre} ${r.apellido || ''} de los responsables de este estudiante?`}
+                            onDelete={eliminarResponsable.bind(null, id, r.id)}
+                          />
                         </div>
                       </div>
                     </div>
@@ -388,32 +415,38 @@ export default async function ExpedienteEstudiantePage({
                 {e.documentos.map((d) => {
                   const nombreArchivo = nombreParaDescarga(d)
                   return (
-                    <a
-                      key={d.id}
-                      href={d.archivoUrl}
-                      download={nombreArchivo}
-                      title={`Descargar ${nombreArchivo}`}
-                      className="flex items-center gap-3 p-4 rounded-2xl border border-cs-border hover:bg-cs-surface-alt transition group bg-cs-surface"
-                    >
-                      <div className="w-10 h-10 rounded-xl bg-cs-bg-soft/20 flex items-center justify-center text-xl shrink-0">
-                        📎
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-cs-text truncate group-hover:text-cs-green transition">
-                          {d.titulo}
-                        </p>
-                        {d.tipo && d.tipo !== 'OTRO' && (
-                          <p className="text-xs text-cs-muted mt-0.5">
-                            {d.tipo === 'FICHA_MEDICA'
-                              ? 'Ficha Médica'
-                              : d.tipo === 'AUTORIZACION'
-                                ? 'Autorización'
-                                : 'Otro'}
+                    <div key={d.id} className="flex flex-wrap items-center gap-2 rounded-2xl border border-cs-border bg-cs-surface p-3">
+                      <a
+                        href={d.archivoUrl}
+                        download={nombreArchivo}
+                        title={`Descargar ${nombreArchivo}`}
+                        className="flex min-w-0 flex-1 items-center gap-3 p-1 transition group hover:bg-cs-surface-alt"
+                      >
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-cs-bg-soft/20 text-xl">
+                          📎
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-bold text-cs-text transition group-hover:text-cs-green">
+                            {d.titulo}
                           </p>
-                        )}
-                      </div>
-                      <span className="shrink-0 text-xs font-bold text-cs-green">Descargar</span>
-                    </a>
+                          {d.tipo && d.tipo !== 'OTRO' && (
+                            <p className="mt-0.5 text-xs text-cs-muted">
+                              {d.tipo === 'FICHA_MEDICA'
+                                ? 'Ficha Médica'
+                                : d.tipo === 'AUTORIZACION'
+                                  ? 'Autorización'
+                                  : 'Otro'}
+                            </p>
+                          )}
+                        </div>
+                        <span className="shrink-0 text-xs font-bold text-cs-green">Descargar</span>
+                      </a>
+                      <EliminarRegistroButton
+                        etiqueta="Eliminar"
+                        mensajeConfirmacion={`¿Eliminar el documento “${d.titulo}”? Esta acción no se puede deshacer.`}
+                        onDelete={eliminarDocumento.bind(null, id, d.id)}
+                      />
+                    </div>
                   )
                 })}
               </div>

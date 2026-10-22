@@ -3,11 +3,13 @@
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
+import { FechaNacimientoSchema } from '@/lib/fecha-nacimiento'
 
 const EstudianteSchema = z.object({
   dni: z.string().min(7, 'El DNI debe tener al menos 7 caracteres'),
   nombre: z.string().min(2, 'El nombre es obligatorio'),
   apellido: z.string().min(2, 'El apellido es obligatorio'),
+  fechaNacimiento: FechaNacimientoSchema,
   curso: z.string().min(1, 'El curso es obligatorio'),
   division: z.string().min(1, 'La división es obligatoria'),
   email: z.string().email('Email inválido').optional().or(z.literal('')),
@@ -20,7 +22,7 @@ const EstudianteSchema = z.object({
   observacionesMedicas: z.string().optional(),
 })
 
-export type EstudianteInput = z.infer<typeof EstudianteSchema>
+export type EstudianteInput = z.input<typeof EstudianteSchema>
 
 export async function getEstudiantes(busqueda?: string) {
   try {
@@ -108,6 +110,7 @@ export async function crearEstudiante(input: EstudianteInput) {
     dni,
     nombre,
     apellido,
+    fechaNacimiento,
     curso,
     division,
     email,
@@ -143,6 +146,7 @@ export async function crearEstudiante(input: EstudianteInput) {
           dni,
           nombre,
           apellido,
+          fechaNacimiento,
           curso,
           division,
           cursoRef: { connect: { id: cursoRef.id } },
@@ -173,11 +177,19 @@ export async function crearEstudiante(input: EstudianteInput) {
 }
 
 export async function actualizarEstudiante(id: string, input: Partial<EstudianteInput>) {
+  const fechaValidada = input.fechaNacimiento === undefined
+    ? undefined
+    : FechaNacimientoSchema.safeParse(input.fechaNacimiento)
+  if (fechaValidada && !fechaValidada.success) {
+    return { success: false, error: fechaValidada.error.issues[0].message }
+  }
+
   try {
     const data: {
       dni?: string
       nombre?: string
       apellido?: string
+      fechaNacimiento?: Date | null
       curso?: string
       division?: string
       email?: string | null
@@ -186,6 +198,7 @@ export async function actualizarEstudiante(id: string, input: Partial<Estudiante
       dni: input.dni,
       nombre: input.nombre,
       apellido: input.apellido,
+      fechaNacimiento: fechaValidada?.success ? fechaValidada.data : undefined,
       curso: input.curso,
       division: input.division,
       email: input.email !== undefined ? (input.email || null) : undefined,
@@ -240,6 +253,27 @@ export async function actualizarEstudiante(id: string, input: Partial<Estudiante
   } catch (error) {
     console.error('Error al actualizar estudiante:', error)
     return { success: false, error: 'No se pudo actualizar la información.' }
+  }
+}
+
+export async function actualizarFechaNacimientoEstudiante(id: string, fechaNacimiento: string) {
+  const idValidado = z.string().uuid().safeParse(id)
+  const fechaValidada = FechaNacimientoSchema.safeParse(fechaNacimiento)
+  if (!idValidado.success) return { success: false, error: 'El estudiante no es válido.' }
+  if (!fechaValidada.success) return { success: false, error: fechaValidada.error.issues[0].message }
+
+  try {
+    await prisma.estudiante.update({
+      where: { id: idValidado.data },
+      data: { fechaNacimiento: fechaValidada.data },
+    })
+    revalidatePath('/')
+    revalidatePath('/estudiantes')
+    revalidatePath(`/estudiantes/${idValidado.data}`)
+    return { success: true }
+  } catch (error) {
+    console.error('Error al actualizar fecha de nacimiento del estudiante:', error)
+    return { success: false, error: 'No se pudo guardar la fecha de nacimiento.' }
   }
 }
 
