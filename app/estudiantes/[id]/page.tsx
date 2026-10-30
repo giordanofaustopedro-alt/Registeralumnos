@@ -1,6 +1,11 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { actualizarFechaNacimientoEstudiante, getEstudiantePorId, eliminarEstudiante } from '@/app/actions/estudiantes'
+import {
+  actualizarEstudiante,
+  actualizarFechaNacimientoEstudiante,
+  getEstudiantePorId,
+  eliminarEstudiante,
+} from '@/app/actions/estudiantes'
 import {
   actualizarFechaNacimientoResponsable,
   agregarResponsable,
@@ -69,6 +74,7 @@ export default async function ExpedienteEstudiantePage({
   const registrarSancionAction = registrarSancion.bind(null, id)
   const agregarDocumentoAction = agregarDocumento.bind(null, id)
   const actualizarFechaEstudianteAction = actualizarFechaNacimientoEstudiante.bind(null, id)
+  const actualizarFichaMedicaAction = actualizarEstudiante.bind(null, id)
 
   function colorTipoHistorial(tipo: string | null) {
     const t = (tipo || '').toLowerCase()
@@ -155,14 +161,60 @@ export default async function ExpedienteEstudiantePage({
         <div className="lg:col-span-2 space-y-6">
           {e.infoMedica && (
             <section className="bg-white rounded-3xl border border-cs-border p-7 shadow-sm">
-              <div className="flex items-center gap-3 mb-5 pb-4 border-b border-cs-border/70">
-                <div className="w-11 h-11 rounded-xl bg-cs-success-soft flex items-center justify-center text-2xl">
-                  🏥
+              <div className="flex justify-between items-center gap-3 mb-5 pb-4 border-b border-cs-border/70">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-xl bg-cs-success-soft flex items-center justify-center text-2xl">
+                    🏥
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-cs-text">Ficha Médica</h2>
+                    <p className="text-sm text-cs-muted">Datos de salud para emergencias</p>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="text-xl font-bold text-cs-text">Ficha Médica</h2>
-                  <p className="text-sm text-cs-muted">Datos de salud para emergencias</p>
-                </div>
+                <FormularioAccion
+                  titulo="Editar Ficha Médica"
+                  campos={[
+                    {
+                      name: 'grupoSanguineo',
+                      label: 'Grupo Sanguíneo',
+                      placeholder: 'Ej: 0+, A-, AB+',
+                      value: e.infoMedica.grupoSanguineo || '',
+                    },
+                    {
+                      name: 'alergias',
+                      label: 'Alergias',
+                      placeholder: 'Ninguna',
+                      value: e.infoMedica.alergias || '',
+                    },
+                    {
+                      name: 'medicacion',
+                      label: 'Medicación',
+                      placeholder: 'Ninguna',
+                      value: e.infoMedica.medicacion || '',
+                    },
+                    {
+                      name: 'enfermedades',
+                      label: 'Enfermedades',
+                      placeholder: 'Ninguna',
+                      value: e.infoMedica.enfermedades || '',
+                    },
+                    {
+                      name: 'problemasCardiacos',
+                      label: 'Problemas Cardíacos',
+                      placeholder: 'Sin antecedentes',
+                      value: e.infoMedica.problemasCardiacos || '',
+                    },
+                    {
+                      name: 'observacionesMedicas',
+                      label: 'Observaciones',
+                      tipo: 'textarea',
+                      value: e.infoMedica.observaciones || '',
+                    },
+                  ]}
+                  onSubmit={actualizarFichaMedicaAction}
+                  exitoMsg="Ficha médica actualizada correctamente"
+                  submitText="Guardar cambios"
+                />
               </div>
               <div className="grid grid-cols-2 gap-5 text-sm">
                 <div className="p-4 rounded-2xl bg-cs-surface-alt border border-cs-border/50">

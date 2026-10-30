@@ -10,6 +10,7 @@ type Campo = {
   required?: boolean
   placeholder?: string
   tipo?: 'textarea'
+  value?: string
 }
 
 type ResultadoAccion = {
@@ -148,6 +149,7 @@ export default function FormularioAccion({
                   name={c.name}
                   required={c.required}
                   placeholder={c.placeholder}
+                  defaultValue={c.value}
                   rows={3}
                   className={`${inputCls} resize-none`}
                 />
@@ -157,6 +159,7 @@ export default function FormularioAccion({
                   type={c.type || 'text'}
                   required={c.required}
                   placeholder={c.placeholder}
+                  defaultValue={c.value}
                   className={inputCls}
                 />
               )}
